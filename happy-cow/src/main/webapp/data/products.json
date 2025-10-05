@@ -1,0 +1,42 @@
+[
+  {
+    "name": "Fresh Milk",
+    "price": "₹50 / litre",
+    "image": "images/milk.jpg"
+  },
+  {
+    "name": "Cheese",
+    "price": "₹120 / 200g",
+    "image": "https://cdn-prod.medicalnewstoday.com/content/images/articles/319/319926/selection-of-cheeses.jpg"
+  },
+  {
+    "name": "Yogurt",
+    "price": "₹40 / cup",
+    "image": "https://media.istockphoto.com/id/155372492/photo/dairy-products-cheese-yoghurt-milk.jpg?s=612x612&w=0&k=20&c=3Kb2w1nS5h4Oa5FJ_HegX3P2-gpdtqPFTpGxGSVYxe4="
+  },
+  {
+    "name": "Butter",
+    "price": "₹80 / 100g",
+    "image": "https://www.foodallergy.org/sites/default/files/styles/1200x680/public/2021-05/butter-1679x487.png"
+  },
+  {
+    "name": "Ghee",
+    "price": "₹500 / litre",
+    "image": "https://tiimg.tistatic.com/fp/1/007/708/desi-delight-pure-sterilized-light-yellow-fresh-ghee-pack-of-1-kg-798.jpg"
+  },
+  {
+    "name": "Curd",
+    "price": "₹60 / litre",
+    "image": "https://5.imimg.com/data5/LQ/KN/EM/SELLER-49814463/curd-500x500.jpeg"
+  },
+  {
+    "name": "Paneer",
+    "price": "₹90 / 200g",
+    "image": "https://static.wixstatic.com/media/c6b31a_d94d166bf0d24c828f5e0eabd536126a~mv2.jpg/v1/fill/w_999,h_759,al_c,q_85/c6b31a_d94d166bf0d24c828f5e0eabd536126a~mv2.jpg"
+  },
+  {
+    "name": "Flavored Milk",
+    "price": "₹30 / bottle",
+    "image": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQW2lT-Ys1lHFzaxP9MAsdcxg7qZcl2gM3mAA&s"
+  }
+]
