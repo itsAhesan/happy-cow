@@ -102,10 +102,15 @@
         <div class="col-md-2 sidebar">
             <a href="#" class="active"><i class="fa-solid fa-gauge-high me-2"></i> Dashboard</a>
             <a href="productDashboard"><i class="fa-solid fa-cow me-2"></i> Products</a>
+
             <a href="#"><i class="fa-solid fa-cart-shopping me-2"></i> Orders</a>
             <a href="#"><i class="fa-solid fa-users me-2"></i> Customers</a>
+
             <a href="agentDashboard"><i class="fa-solid fa-user-tie me-2"></i> Agents</a> <!-- ✅ New Agents tab -->
             <a href="#"><i class="fa-solid fa-chart-line me-2"></i> Reports</a>
+
+            <a href="productCollection"><i class="fa-solid fa-boxes-packing me-2"></i> Product Collection</a>
+            <a href="productCollectionList"><i class="fa-solid fa-table-list me-2"></i> View Collections</a>
             <a href="logout" class="text-danger"><i class="fa-solid fa-right-from-bracket me-2"></i> Logout</a>
         </div>
 

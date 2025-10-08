@@ -213,5 +213,16 @@ public class AgentServiceImpl implements AgentService {
         return agentRepo.getAllMilkTypes();
     }
 
+    @Override
+    public AgentDTO getAgentByPhoneNumber(String phoneNumber) {
+
+        AgentEntity agentEntity = agentRepo.findByPhoneNumber(phoneNumber);
+
+        AgentDTO agentDTO = new AgentDTO();
+        BeanUtils.copyProperties(agentEntity, agentDTO);
+
+        return agentDTO;
+    }
+
 
 }

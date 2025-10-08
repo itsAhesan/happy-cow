@@ -28,4 +28,6 @@ public interface AgentService {
     long getAgentSearchCount(String trim);
 
     List<String> getAllMilkTypes();
+
+    AgentDTO getAgentByPhoneNumber(String phoneNumber);
 }
