@@ -1,5 +1,6 @@
 package com.xworkz.happycow.repo;
 
+import com.xworkz.happycow.dto.ProductDTO;
 import com.xworkz.happycow.entity.ProductEntity;
 
 import java.util.List;
@@ -22,4 +23,6 @@ public interface ProductRepo {
     long countProductsBySearch(String trim);
 
     ProductEntity findByProductName(String productName);
+
+    List<ProductEntity> getAllProductsByTypesOfMilk();
 }

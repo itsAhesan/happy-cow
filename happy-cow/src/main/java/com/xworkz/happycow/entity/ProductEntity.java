@@ -12,6 +12,11 @@ import java.time.LocalDateTime;
 @NamedQuery(name = "findAllProducts", query = "SELECT p FROM ProductEntity p WHERE p.active = true")
 @NamedQuery(name = "findByProductName", query = "SELECT p FROM ProductEntity p WHERE p.productName = :productName AND p.active = true")
 //@NamedQuery(name = "searchProducts", query = "SELECT p FROM ProductEntity p WHERE p.productName LIKE :productName AND p.active = true")
+
+/*@NamedQuery(name = "findAllProductsByTypesOfMilk", query = "SELECT DISTINCT a FROM ProductEntity a "
+        +"WHERE a.active = true "+
+        "AND a.productType = 'Buy' "+
+        "AND a.productName LIKE '%Milk%'")*/
 public class ProductEntity {
 
     @Id
@@ -42,10 +47,4 @@ public class ProductEntity {
 
     @Column(name = "product_type")
     private String productType;
-
-
-
-
-
-
 }

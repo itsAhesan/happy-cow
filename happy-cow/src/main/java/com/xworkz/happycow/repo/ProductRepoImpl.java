@@ -1,5 +1,6 @@
 package com.xworkz.happycow.repo;
 
+import com.xworkz.happycow.dto.ProductDTO;
 import com.xworkz.happycow.entity.ProductEntity;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,6 +16,43 @@ import java.util.List;
 @Repository
 @Slf4j
 public class ProductRepoImpl implements ProductRepo {
+
+
+    @Override
+    public List<ProductEntity> getAllProductsByTypesOfMilk() {
+        EntityManager em = null;
+      try {
+          em = emf.createEntityManager();
+
+
+          String query = "SELECT DISTINCT a FROM ProductEntity a " +
+                  "WHERE a.active = true " +
+                  "AND a.productType = 'Buy' " +
+                  "AND a.productName LIKE '%Milk%'";
+
+          TypedQuery<ProductEntity> typedQuery = em.createQuery(query, ProductEntity.class);
+          List<ProductEntity> findAllProductsByTypesOfMilk = typedQuery.getResultList();
+          return findAllProductsByTypesOfMilk;
+
+
+        //  List<ProductEntity> findAllProductsByTypesOfMilk = em.createNamedQuery(query, ProductEntity.class).getResultList();
+
+
+
+        //  return findAllProductsByTypesOfMilk;
+        } catch (Exception e) {
+            log.error("Failed to find all Products", e);
+            return Collections.emptyList();
+        } finally {
+            if (em != null) {
+                em.close();
+            }
+
+        }
+
+
+
+    }
 
     @Autowired
     private EntityManagerFactory emf;
