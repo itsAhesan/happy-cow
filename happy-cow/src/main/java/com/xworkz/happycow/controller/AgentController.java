@@ -12,7 +12,9 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import javax.servlet.http.HttpSession;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Controller
 @Slf4j
@@ -21,48 +23,6 @@ public class AgentController {
 
     @Autowired
     private AgentService agentService;
-
-
-   /* @GetMapping("agentDashboard")
-    public String agentDashboard(HttpSession session, Model model) {
-
-        AdminDTO admin = (AdminDTO) session.getAttribute("loggedInAdmin");
-
-        if (admin == null) {
-            return "redirect:/adminLogin";
-        }
-        List<AgentDTO> agents=agentService.getAllAgents();
-
-        log.info("List of Agents: {}", agents);
-        model.addAttribute("agents", agents);
-
-        return "agentDashboard";
-    }*/
-
-
-  /*  @GetMapping("agentDashboard")
-    public String agentDashboard(HttpSession session, Model model,
-                                   @RequestParam(defaultValue = "1") int page,
-                                   @RequestParam(defaultValue = "8") int size) {
-
-        AdminDTO admin = (AdminDTO) session.getAttribute("loggedInAdmin");
-        if (admin == null) {
-            return "redirect:/adminLogin";
-        }
-
-        List<AgentDTO> agents = agentService.getAllAgents(page, size);
-
-        long totalAgents = agentService.getAgentCount();
-        int totalPages = (int) Math.ceil((double) totalAgents / size);
-
-        model.addAttribute("totalPages", totalPages);
-        model.addAttribute("agents", agents);
-        model.addAttribute("currentPage", page);
-        model.addAttribute("pageSize", size);
-
-        return "agentDashboard";
-    }*/
-
 
     @GetMapping("agentDashboard")
     public String agentDashboard(HttpSession session, Model model,
@@ -100,11 +60,6 @@ public class AgentController {
         return "agentDashboard";
     }
 
-/*
-    @GetMapping("registerAgent")
-    public String registerAgent() {
-        return "registerAgent";
-    }*/
 
     @PostMapping("saveAgent")
     public String saveAgent(@ModelAttribute AgentDTO agentDTO, HttpSession session, RedirectAttributes redirectAttributes) {
@@ -176,6 +131,80 @@ public class AgentController {
         model.addAttribute("milkTypes", milkTypes);
         return "registerAgent";  // JSP page name
     }
+
+    @GetMapping("agentLogin")
+    public String showAgentLoginPage(Model model) {
+        return "agentLoginForm";  // JSP page name
+    }
+
+
+    /*@PostMapping("agentLogin/sendAgentOtp")
+    public Map<String, Object> sendAgentOtp(@RequestParam String email) {
+        boolean sent = agentService.sendOtp(email);
+        Map<String, Object> body = new HashMap<>();
+        body.put("sent", sent);
+        return body; // works on Java 8
+    }*/
+
+    /*@GetMapping("agentLogin/check-email")
+    @ResponseBody
+    public Map<String, Boolean> checkEmail(@RequestParam String email) {
+        boolean exists = agentService.existsByEmail(email);
+        // Use a concrete map for Java 8 compatibility
+        Map<String, Boolean> body = new HashMap<>();
+        body.put("exists", exists);
+        return body;
+    }
+
+    @PostMapping("agentLogin/sendAgentOtp")
+    @ResponseBody
+    public Map<String, Object> sendAgentOtp(@RequestParam String email) {
+        boolean sent = agentService.sendOtp(email);
+        Map<String, Object> body = new HashMap<>();
+        body.put("sent", sent);
+        return body;  // jQuery will get JSON: { "sent": true/false }
+    }*/
+
+   /* @PostMapping("agentLogin/verifyAgentOtp")
+    @ResponseBody
+    public Map<String, Object> verifyAgentOtp(@RequestParam String email,
+                                              @RequestParam String otp) {
+        boolean ok = agentService.verifyOtp(email, otp);
+        Map<String, Object> body = new HashMap<>();
+        body.put("verified", ok);
+        return body;  // JSON: { "verified": true/false }
+    }*/
+
+    @GetMapping("agentLoginSuccess")
+    public String agentLoginSuccess(HttpSession session,Model model) {
+
+        AgentDTO loggedInAgent = (AgentDTO) session.getAttribute("loggedInAgent");
+        if (loggedInAgent == null) {
+            return "redirect:/agentLogin";
+        }
+
+        log.info("Agent logged in successfully: {}", loggedInAgent);
+
+        model.addAttribute("agent", loggedInAgent);
+
+
+
+        return "agentLoginSuccess";  // JSP page name
+    }
+
+    @GetMapping("agentLogout")
+    public String agentLogout(HttpSession session,RedirectAttributes redirectAttributes) {
+        session.invalidate();
+        redirectAttributes.addFlashAttribute("successMessage", "You have been logged out successfully.");
+        return "redirect:/agentLogin";
+    }
+
+
+
+
+
+
+
 
 
 }

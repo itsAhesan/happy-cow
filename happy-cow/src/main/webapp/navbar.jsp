@@ -20,7 +20,7 @@
             <ul class="navbar-nav ms-auto gap-2">
                 <li class="nav-item"><a class="nav-link fs-5 fw-bold px-3 py-2 rounded-pill text-success" href="index.jsp">Home</a></li>
                 <li class="nav-item"><a class="nav-link fs-5 fw-bold px-3 py-2 rounded-pill text-success" href="customerLogin.jsp">Customer Login</a></li>
-                <li class="nav-item"><a class="nav-link fs-5 fw-bold px-3 py-2 rounded-pill text-success" href="agentLogin.jsp">Agent Login</a></li>
+                <li class="nav-item"><a class="nav-link fs-5 fw-bold px-3 py-2 rounded-pill text-success" href="agentLogin">Agent Login</a></li>
                 <li class="nav-item"><a class="nav-link active fs-5 fw-bold px-3 py-2 rounded-pill text-success" href="adminLogin">Admin Login</a></li>
             </ul>
         </div>

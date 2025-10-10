@@ -46,7 +46,7 @@
                     <ul class="dropdown-menu" aria-labelledby="loginDropdown">
                         <li><a class="dropdown-item d-flex align-items-center gap-2 py-2" href="adminLogin"><i class="fa-solid fa-user-shield fa-sm text-dark"></i> Admin Login</a></li>
                         <li><a class="dropdown-item d-flex align-items-center gap-2 py-2" href="customerLogin.jsp"><i class="fa-solid fa-user fa-sm text-primary"></i> Customer Login</a></li>
-                        <li><a class="dropdown-item d-flex align-items-center gap-2 py-2" href="agentLogin.jsp"><i class="fa-solid fa-user-tie fa-sm text-success"></i> Agent Login</a></li>
+                        <li><a class="dropdown-item d-flex align-items-center gap-2 py-2" href="agentLogin"><i class="fa-solid fa-user-tie fa-sm text-success"></i> Agent Login</a></li>
                         <li><a class="dropdown-item d-flex align-items-center gap-2 py-2" href="#"><i class="fa-solid fa-user-plus fa-sm text-info"></i> Registration</a></li>
                     </ul>
                 </li>

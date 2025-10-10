@@ -1,21 +1,21 @@
 package com.xworkz.happycow.repo;
 
 import com.xworkz.happycow.dto.AgentDTO;
+import com.xworkz.happycow.dto.PhotoDTO;
 import com.xworkz.happycow.entity.AgentEntity;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 
-import javax.persistence.EntityManager;
-import javax.persistence.EntityManagerFactory;
-import javax.persistence.EntityTransaction;
-import javax.persistence.TypedQuery;
+import javax.persistence.*;
 import java.util.Collections;
 import java.util.List;
 
 @Repository
 @Slf4j
 public class AgentRepoImpl implements AgentRepo {
+
+
     @Override
     public AgentEntity findById(Integer id) {
         EntityManager em = null;
@@ -326,6 +326,84 @@ public class AgentRepoImpl implements AgentRepo {
             if (em != null) {
                 em.close();
             }
+        }
+    }
+
+
+
+    @Override
+    public AgentEntity saveOrUpdate(AgentEntity entity) {
+        EntityManager em = null;
+        EntityTransaction tx = null;
+        try {
+            em = emf.createEntityManager();
+            tx = em.getTransaction();
+            tx.begin();
+
+            AgentEntity merged = em.merge(entity);
+
+            tx.commit();
+            return merged;
+        } catch (Exception e) {
+            if (tx != null && tx.isActive()) tx.rollback();
+            log.error("Failed to saveOrUpdate AgentEntity id={}", entity.getAgentId(), e);
+            throw e;
+        } finally {
+            if (em != null) em.close();
+        }
+    }
+
+    @Override
+    public PhotoDTO findPhotoDTOById(Integer id) {
+        EntityManager em = null;
+        try {
+            em = emf.createEntityManager();
+            Object[] row = (Object[]) em.createQuery(
+                            "SELECT a.profilePicture, a.profilePictureContentType " +
+                                    "FROM AgentEntity a WHERE a.agentId = :id")
+                    .setParameter("id", id)
+                    .getSingleResult();
+
+            if (row == null) return null;
+            byte[] bytes = (byte[]) row[0];
+            String ct = (String) row[1];
+
+            if (bytes == null || bytes.length == 0) return null;
+            if (ct == null ) ct = "image/jpeg";
+
+            return new PhotoDTO(bytes, ct);
+        } catch (NoResultException nre) {
+            return null;
+        } catch (Exception e) {
+            log.error("Failed to load photo for agent id {}", id, e);
+            return null;
+        } finally {
+            if (em != null) em.close();
+        }
+    }
+
+    @Override
+    public void clearPhoto(Integer id) {
+        EntityManager em = null;
+        EntityTransaction tx = null;
+        try {
+            em = emf.createEntityManager();
+            tx = em.getTransaction();
+            tx.begin();
+
+            Query q = em.createQuery(
+                    "UPDATE AgentEntity a SET a.profilePicture = null, a.profilePictureContentType = null " +
+                            "WHERE a.agentId = :id");
+            q.setParameter("id", id);
+            q.executeUpdate();
+
+            tx.commit();
+        } catch (Exception e) {
+            if (tx != null && tx.isActive()) tx.rollback();
+            log.error("Failed to clear photo for agent id {}", id, e);
+            throw e;
+        } finally {
+            if (em != null) em.close();
         }
     }
 
