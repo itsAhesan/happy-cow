@@ -1,9 +1,12 @@
 package com.xworkz.happycow.service;
 
 import com.xworkz.happycow.dto.AgentDTO;
+import com.xworkz.happycow.dto.PhotoDTO;
 import com.xworkz.happycow.entity.AgentEntity;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
+import java.util.stream.DoubleStream;
 
 public interface AgentService {
 
@@ -30,4 +33,21 @@ public interface AgentService {
     List<String> getAllMilkTypes();
 
     AgentDTO getAgentByPhoneNumber(String phoneNumber);
+
+    boolean sendOtp(String email);
+
+    boolean verifyOtp(String email, String otp);
+
+    AgentEntity findByEmail(String email);
+
+    void updateFromDto(String emailOfLoggedInUser, AgentDTO dto, MultipartFile imageFile);
+
+    PhotoDTO findPhotoById(Integer id);
+
+    void clearPhoto(Integer id, String requesterEmail);
+
+    AgentEntity findByEmailEntity(String email);
+
+    //AgentDTO findByEmail(String email);
+
 }

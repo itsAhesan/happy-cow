@@ -5,8 +5,10 @@ package com.xworkz.happycow.entity;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.ToString;
 
 import javax.persistence.*;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "agent_info")
@@ -43,4 +45,23 @@ public class AgentEntity {
 
     @Column(name = "active")
     private Boolean active = true;
+
+    @Column(name = "otp")
+    private String otp;
+
+    @Column(name = "otp_expiry")
+    private LocalDateTime otpExpiry;
+
+
+
+    @Lob
+    @Basic(fetch = FetchType.LAZY) // don't fetch the blob unless needed
+    @Column(name = "profile_picture", columnDefinition = "LONGBLOB")
+    @ToString.Exclude // avoid dumping bytes in logs
+    private byte[] profilePicture;
+
+    @Column(name = "profile_picture_content_type", length = 100)
+    private String profilePictureContentType;
+
+
 }

@@ -1,6 +1,7 @@
 package com.xworkz.happycow.service;
 
 import com.xworkz.happycow.dto.AgentDTO;
+import com.xworkz.happycow.dto.PhotoDTO;
 import com.xworkz.happycow.entity.AgentAuditEntity;
 import com.xworkz.happycow.entity.AgentEntity;
 import com.xworkz.happycow.repo.AgentAuditRepo;
@@ -12,15 +13,43 @@ import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 @Service
 @Slf4j
 public class AgentServiceImpl implements AgentService {
+
+    @Override
+    public boolean verifyOtp(String email, String otp) {
+        AgentEntity agent = agentRepo.findByEmail(email);
+        if (agent == null) {
+            return false;
+        }
+        if (!agent.getOtp().equals(otp)) {
+            return false;
+        }
+        if (agent.getOtpExpiry().isBefore(LocalDateTime.now())) {
+            return false;
+        }
+        agent.setOtp(null);
+        agent.setOtpExpiry(null);
+        agentRepo.update(agent);
+        return true;
+    }
+
+    @Override
+    public AgentEntity findByEmail(String email) {
+        AgentEntity entity=agentRepo.findByEmail(email);
+
+      //  AgentDTO dto=new AgentDTO();
+      //  BeanUtils.copyProperties(entity, dto);
+
+        return entity;
+    }
 
     @Autowired
     private AgentRepo agentRepo;
@@ -222,6 +251,110 @@ public class AgentServiceImpl implements AgentService {
         BeanUtils.copyProperties(agentEntity, agentDTO);
 
         return agentDTO;
+    }
+
+    @Override
+    public boolean sendOtp(String email) {
+        AgentEntity agent = agentRepo.findByEmail(email);
+        if (agent == null) {
+            log.warn("sendOtp: email not found {}", email);
+            return false;
+        }
+
+        String otp = String.format("%06d", new Random().nextInt(999999));
+        agent.setOtp(otp);
+        agent.setOtpExpiry(LocalDateTime.now().plusMinutes(5));
+        agentRepo.update(agent);
+
+        try {
+            SimpleMailMessage msg = new SimpleMailMessage();
+            msg.setTo(email); // or agent.getEmail() if that’s your field
+            msg.setSubject("HappyCow Dairy - Agent Login OTP");
+            msg.setText("Hi " + (agent.getFirstName() + " " + agent.getLastName()) + ",\n\n"
+                    + "Your OTP for login is: " + otp + "\n"
+                    + "It is valid for 5 minutes.\n\n"
+                    + "— HappyCow Dairy");
+            mailSender.send(msg);
+            log.info("OTP sent to {}", email);
+            return true;
+        } catch (Exception e) {
+            log.error("Failed to send OTP to {}", email, e);
+            return false;
+        }
+    }
+
+
+
+
+
+
+    @Override
+    public AgentEntity findByEmailEntity(String email) {
+        AgentEntity e = agentRepo.findByEmail(email);
+        if (e == null) throw new IllegalArgumentException("Agent not found");
+        return e;
+    }
+
+
+
+    @Override
+    public void updateFromDto(String emailOfLoggedInUser, AgentDTO dto, MultipartFile imageFile) {
+        AgentEntity entity = findByEmailEntity(emailOfLoggedInUser);
+
+        // Copy editable fields
+        entity.setFirstName(safeTrim(dto.getFirstName()));
+        entity.setLastName(safeTrim(dto.getLastName()));
+        entity.setAddress(safeTrim(dto.getAddress()));
+        entity.setTypesOfMilk(safeTrim(dto.getTypesOfMilk()));
+        // email/phone are read-only in UI; do not change here.
+
+        // Image (optional)
+        if (imageFile != null && !imageFile.isEmpty()) {
+            validateImage(imageFile);
+            try {
+                entity.setProfilePicture(imageFile.getBytes());
+                entity.setProfilePictureContentType(imageFile.getContentType());
+            } catch (Exception ex) {
+                throw new IllegalArgumentException("Failed to read uploaded image");
+            }
+        }
+
+        agentRepo.saveOrUpdate(entity);
+    }
+
+    @Override
+    public PhotoDTO findPhotoById(Integer id) {
+        return agentRepo.findPhotoDTOById(id); // may be null
+    }
+
+    @Override
+    public void clearPhoto(Integer id, String requesterEmail) {
+        AgentEntity target = agentRepo.findById(id);
+        if (target == null) {
+            throw new IllegalArgumentException("Agent not found");
+        }
+        // Basic ownership check
+        if (!target.getEmail().equalsIgnoreCase(requesterEmail)) {
+            throw new SecurityException("Not allowed");
+        }
+        agentRepo.clearPhoto(id);
+    }
+
+    private void validateImage(MultipartFile file) {
+        long maxBytes = 2L * 1024 * 1024; // 2 MB
+        if (file.getSize() > maxBytes) {
+            throw new IllegalArgumentException("Image too large (max 2 MB)");
+        }
+        String ct = file.getContentType();
+        if (ct == null || !(ct.equalsIgnoreCase("image/jpeg")
+                || ct.equalsIgnoreCase("image/png")
+                || ct.equalsIgnoreCase("image/webp"))) {
+            throw new IllegalArgumentException("Only JPG, PNG, or WEBP allowed");
+        }
+    }
+
+    private String safeTrim(String s) {
+        return s == null ? null : s.trim();
     }
 
 

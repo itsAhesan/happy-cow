@@ -2,6 +2,7 @@ package com.xworkz.happycow.dto;
 
 import lombok.Data;
 import org.springframework.stereotype.Component;
+import org.springframework.web.multipart.MultipartFile;
 
 import javax.persistence.Column;
 
@@ -22,6 +23,12 @@ public class AgentDTO {
     private String address;
 
     private String typesOfMilk;
+
+    private byte[] profilePicture;
+
+    private String profilePictureContentType;
+
+    private transient MultipartFile imageFile;
 
 
 }

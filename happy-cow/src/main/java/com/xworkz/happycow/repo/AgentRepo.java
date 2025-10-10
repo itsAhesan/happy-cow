@@ -1,6 +1,7 @@
 package com.xworkz.happycow.repo;
 
 import com.xworkz.happycow.dto.AgentDTO;
+import com.xworkz.happycow.dto.PhotoDTO;
 import com.xworkz.happycow.entity.AgentEntity;
 
 import java.util.List;
@@ -28,4 +29,12 @@ public interface AgentRepo {
     long countAgentsBySearch(String keyword);
 
     List<String> getAllMilkTypes();
+
+
+
+    AgentEntity saveOrUpdate(AgentEntity entity);
+
+    PhotoDTO findPhotoDTOById(Integer id);
+
+    void clearPhoto(Integer id);
 }
