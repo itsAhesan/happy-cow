@@ -29,7 +29,8 @@
         .kbd { padding:.15rem .4rem; border:1px solid #cbd5e1; border-bottom-width:2px; border-radius:.35rem; background:#f8fafc; font-family:ui-monospace,Menlo,Consolas,monospace; font-size:.85rem; }
         .form-section-title { font-size: .95rem; letter-spacing:.04em; color:#6b7280; text-transform:uppercase; margin-bottom:.5rem; }
         .required:after { content:" *"; color:#dc3545; }
-        .label { color:#6b7280; font-size:.9rem; }
+        .divider { height:1px; background:#e5e7eb; margin:1.25rem 0; }
+        .subtle { color:#6b7280; font-size:.9rem; }
     </style>
 </head>
 
@@ -38,7 +39,7 @@
 
 <c:set var="ctx" value="${pageContext.request.contextPath}"/>
 
-<!-- Prefer request 'agent'; else fall back to session 'loggedInAgent' -->
+<!-- Pick agent from request, else session -->
 <c:choose>
     <c:when test="${not empty requestScope.agent}">
         <c:set var="agent" value="${requestScope.agent}" />
@@ -48,7 +49,7 @@
     </c:otherwise>
 </c:choose>
 
-<!-- Safe initials -->
+<!-- Initials (fallback avatar) -->
 <c:set var="firstName" value="${empty agent.firstName ? 'Agent' : agent.firstName}" />
 <c:set var="initialFirst" value="${fn:toUpperCase(fn:substring(firstName,0,1))}" />
 <c:set var="initialLast"  value="${empty agent.lastName ? '' : fn:toUpperCase(fn:substring(agent.lastName,0,1))}" />
@@ -101,7 +102,7 @@
         </div>
     </div>
 
-    <!-- Alerts (flash messages) -->
+    <!-- Flash Alerts -->
     <c:if test="${not empty success}">
         <div class="alert alert-success alert-dismissible fade show" role="alert">
             <i class="fa-solid fa-circle-check me-2"></i>${success}
@@ -115,7 +116,29 @@
         </div>
     </c:if>
 
-    <!-- Edit Form -->
+    <!-- Bank module messages (from /agent/profile/bank or /bank/save) -->
+    <c:if test="${not empty bankInfoMsg}">
+        <div class="alert alert-info alert-dismissible fade show" role="alert">
+            <i class="fa-solid fa-circle-info me-2"></i>${bankInfoMsg}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    </c:if>
+    <c:if test="${not empty bankError}">
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="fa-solid fa-triangle-exclamation me-2"></i>${bankError}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    </c:if>
+    <c:if test="${not empty bankSuccess}">
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="fa-solid fa-circle-check me-2"></i>${bankSuccess}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    </c:if>
+
+    <!-- =========================
+         Main Edit Form
+         ========================= -->
     <div class="card mb-5">
         <div class="card-body p-4 p-md-5">
             <form id="agentEditForm"
@@ -124,7 +147,7 @@
                   enctype="multipart/form-data"
                   novalidate>
 
-                <!-- CSRF (Spring Security) -->
+                <!-- CSRF -->
                 <c:if test="${not empty _csrf}">
                     <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}"/>
                 </c:if>
@@ -135,10 +158,7 @@
                     <div class="row g-3 align-items-center">
                         <div class="col-auto">
                             <div class="avatar-wrap shadow-sm">
-                                <img id="photoPreviewInline"
-                                     src=""
-                                     alt="Inline preview"
-                                     style="display:none;">
+                                <img id="photoPreviewInline" src="" alt="Inline preview" style="display:none;">
                                 <div id="avatarInitialsInline" class="avatar-initials" style="display:none;">${initials}</div>
                             </div>
                         </div>
@@ -151,7 +171,7 @@
                         </div>
                         <div class="col-12 col-md">
                             <c:if test="${not empty agent.agentId}">
-                                <!-- Open confirmation modal instead of alert() -->
+                                <!-- Open confirmation modal -->
                                 <button type="button"
                                         class="btn btn-outline-danger w-100 mt-2 mt-md-0"
                                         data-bs-toggle="modal"
@@ -166,7 +186,7 @@
                 <hr class="my-4">
 
                 <!-- Basic Info -->
-                <div class="mb-4">
+                <div class="mb-3">
                     <div class="form-section-title">Basic Information</div>
                     <div class="row g-3">
                         <div class="col-md-6">
@@ -179,8 +199,7 @@
                         <div class="col-md-6">
                             <label for="lastName" class="form-label">Last Name</label>
                             <input type="text" class="form-control" id="lastName" name="lastName"
-                                   value="<c:out value='${agent.lastName}'/>"
-                                   maxlength="50">
+                                   value="<c:out value='${agent.lastName}'/>" maxlength="50">
                         </div>
                     </div>
                 </div>
@@ -205,7 +224,7 @@
                 </div>
 
                 <!-- Address & Preferences -->
-                <div class="mb-4">
+                <div class="mb-2">
                     <div class="form-section-title">Address & Preferences</div>
                     <div class="row g-3">
                         <div class="col-12">
@@ -222,29 +241,30 @@
                     </div>
                 </div>
 
-                <hr class="my-4">
+                <div class="divider"></div>
 
                 <!-- Actions -->
-                <div class="d-flex flex-wrap gap-2">
+                <div class="d-flex flex-wrap gap-2 align-items-center">
                     <button type="submit" class="btn btn-success">
                         <i class="fa-solid fa-floppy-disk me-2"></i>Save Changes
                     </button>
                     <a href="${ctx}/agent/profile" class="btn btn-outline-secondary">Cancel</a>
-                    <a href="${ctx}/agent/password" class="btn btn-outline-success ms-auto">
-                        <i class="fa-solid fa-key me-2"></i>Change Password
-                    </a>
+
+                    <!-- Bank Details CTA (moved AFTER Save/Cancel; “real project” placement) -->
+                    <div class="ms-auto d-flex align-items-center gap-3">
+                        <span class="subtle d-none d-md-inline">Manage payout details</span>
+                        <a href="${ctx}/agent/profile/bank" class="btn btn-outline-success">
+                            <i class="fa-solid fa-building-columns me-2"></i>Bank Details
+                        </a>
+                    </div>
                 </div>
 
-                <div class="alert alert-info mt-4 mb-0">
-                    <i class="fa-solid fa-lightbulb me-2"></i>
-                    Tip: Press <span class="kbd">Alt</span> + <span class="kbd">/</span> to quickly search actions.
-                </div>
             </form>
         </div>
     </div>
 </section>
 
-<!-- Remove Photo: Confirmation Modal (Bootstrap 5) -->
+<!-- Remove Photo: Confirmation Modal -->
 <c:if test="${not empty agent.agentId}">
 <div class="modal fade" id="confirmRemovePhotoModal" tabindex="-1" aria-labelledby="confirmRemovePhotoLabel" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered">
@@ -259,13 +279,8 @@
         Are you sure you want to remove your current profile photo? This action cannot be undone.
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
-            Cancel
-        </button>
-        <!-- Separate form to POST delete (kept outside main form to avoid nested forms) -->
-        <form id="removePhotoForm"
-              action="${ctx}/agent/profile/photo/${agent.agentId}/delete"
-              method="post" class="m-0">
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+        <form id="removePhotoForm" action="${ctx}/agent/profile/photo/${agent.agentId}/delete" method="post" class="m-0">
             <c:if test="${not empty _csrf}">
                 <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}"/>
             </c:if>
@@ -285,7 +300,7 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
 (function () {
-    // Adjust body top padding to match current fixed navbar height (+20px)
+    // Adjust body padding for fixed navbar height
     function adjustNavOffset() {
         var nav = document.querySelector('.navbar.fixed-top');
         if (!nav) return;
@@ -314,7 +329,7 @@
         imageError.style.display = 'none';
     }
 
-    // Fallback to initials if top image fails (including default image)
+    // Fallback to initials if top image fails
     if (previewTop) {
         previewTop.addEventListener('error', function(){
             previewTop.style.display = 'none';
@@ -365,7 +380,7 @@
         });
     }
 
-    // Bootstrap validation styling
+    // Profile form validation styling
     form.addEventListener('submit', function (e) {
         if (!form.checkValidity()) {
             e.preventDefault();

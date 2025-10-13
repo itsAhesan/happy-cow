@@ -13,6 +13,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import javax.servlet.http.HttpSession;
 import java.time.LocalDate;
@@ -38,8 +39,6 @@ public class ProductCollectionController {
 
         List<ProductDTO> products = productCollectionService.getAllProductsByTypesOfMilk();
 
-
-
         model.addAttribute("products",products);
 
         log.info("ProductCollectionController is working");
@@ -51,7 +50,7 @@ public class ProductCollectionController {
 
     @PostMapping("/saveProductCollection")
     public String save(@ModelAttribute("productCollection") ProductCollectionDTO dto,
-                       Model model,HttpSession session) {
+                       Model model, HttpSession session, RedirectAttributes redirectAttributes) {
        /* // 1) Enforce price from backend product (do NOT trust client price)
         ProductEntity product = productService.getActiveProductByName(dto.getTypeOfMilk());
         dto.setPrice(product.getProductPrice());*/
@@ -69,7 +68,7 @@ public class ProductCollectionController {
 
 
 
-        model.addAttribute("successMessage", "Product collection saved.");
+        redirectAttributes.addFlashAttribute("successMessage", "Product collection added successfully.");
         return "redirect:/productCollection";
     }
 

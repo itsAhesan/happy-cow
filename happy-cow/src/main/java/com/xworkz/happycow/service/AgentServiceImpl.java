@@ -1,8 +1,11 @@
 package com.xworkz.happycow.service;
 
 import com.xworkz.happycow.dto.AgentDTO;
+import com.xworkz.happycow.dto.BankForm;
 import com.xworkz.happycow.dto.PhotoDTO;
 import com.xworkz.happycow.entity.AgentAuditEntity;
+import com.xworkz.happycow.entity.AgentBankAuditEntity;
+import com.xworkz.happycow.entity.AgentBankEntity;
 import com.xworkz.happycow.entity.AgentEntity;
 import com.xworkz.happycow.repo.AgentAuditRepo;
 import com.xworkz.happycow.repo.AgentRepo;
@@ -43,10 +46,10 @@ public class AgentServiceImpl implements AgentService {
 
     @Override
     public AgentEntity findByEmail(String email) {
-        AgentEntity entity=agentRepo.findByEmail(email);
+        AgentEntity entity = agentRepo.findByEmail(email);
 
-      //  AgentDTO dto=new AgentDTO();
-      //  BeanUtils.copyProperties(entity, dto);
+        //  AgentDTO dto=new AgentDTO();
+        //  BeanUtils.copyProperties(entity, dto);
 
         return entity;
     }
@@ -152,7 +155,7 @@ public class AgentServiceImpl implements AgentService {
     }
 
     @Override
-    public boolean updateAgent(AgentDTO agentDTO,String adminName) {
+    public boolean updateAgent(AgentDTO agentDTO, String adminName) {
 
         AgentEntity agentEntity = agentRepo.findById(agentDTO.getAgentId());
         if (agentEntity == null) {
@@ -274,7 +277,7 @@ public class AgentServiceImpl implements AgentService {
                     + "Your OTP for login is: " + otp + "\n"
                     + "It is valid for 5 minutes.\n\n"
                     + "— HappyCow Dairy");
-            mailSender.send(msg);
+              mailSender.send(msg);
             log.info("OTP sent to {}", email);
             return true;
         } catch (Exception e) {
@@ -284,17 +287,12 @@ public class AgentServiceImpl implements AgentService {
     }
 
 
-
-
-
-
     @Override
     public AgentEntity findByEmailEntity(String email) {
         AgentEntity e = agentRepo.findByEmail(email);
         if (e == null) throw new IllegalArgumentException("Agent not found");
         return e;
     }
-
 
 
     @Override
@@ -355,6 +353,95 @@ public class AgentServiceImpl implements AgentService {
 
     private String safeTrim(String s) {
         return s == null ? null : s.trim();
+    }
+
+    @Transactional
+    public AgentBankEntity saveFirstTime(BankForm form, String createdBy,Integer agentId,String email) {
+        // hard lock: only if NOT already present
+      /*  if (agentRepo.existsByAgentId(form.getAgentId())) {
+            throw new IllegalStateException("Bank details already exist for this agent.");
+        }*/
+        if (!form.getAccountNumber().equals(form.getConfirmAccountNumber())) {
+            throw new IllegalArgumentException("Account numbers do not match.");
+        }
+
+        AgentBankEntity bankEntity = new AgentBankEntity();
+
+
+        BeanUtils.copyProperties(form, bankEntity);
+      //  bankEntity.setCreatedBy(createdBy);
+
+
+      boolean savedBankDetails=  agentRepo.saveBankDetails(bankEntity);
+
+      if(savedBankDetails){
+          log.info("Bank details saved successfully");
+        AgentBankAuditEntity bankAuditEntity = new AgentBankAuditEntity();
+
+      bankAuditEntity.setCreatedBy(createdBy);
+      bankAuditEntity.setCreatedAt(LocalDateTime.now());
+      bankAuditEntity.setAgentBankEntity(bankEntity);
+    /*  bankAuditEntity.setUpdatedBy(createdBy);
+      bankAuditEntity.setUpdatedAt(LocalDateTime.now());*/
+
+        agentRepo.saveBankAudit(bankAuditEntity);
+        log.info("Bank audit saved successfully");
+
+        AgentAuditEntity agentAuditEntity = agentRepo.findByAgentIdFromAgentAudit(agentId);
+
+
+        agentAuditEntity.setUpdatedBy(createdBy);
+        agentAuditEntity.setUpdatedOn(LocalDateTime.now());
+        agentRepo.updateAgentAudit(agentAuditEntity);
+        log.info("Agent audit updated successfully");
+
+
+          String subject = "Your bank details have been added successfully – HappyCow Dairy";
+
+          String body = "Dear " + createdBy + ",\n\n"
+                  + "We’re pleased to inform you that your bank details have been added successfully to your HappyCow Dairy agent profile.\n\n"
+                  + "These details will be used for all future payout transactions. For security reasons, your bank information is now locked and cannot be modified directly.\n\n"
+                  + "If you need to make any corrections or updates, please contact the Payroll Support team or your branch administrator.\n\n"
+                  + "Thank you for being a valued part of HappyCow Dairy.\n\n"
+                  + "Warm regards,\n"
+                  + "HappyCow Dairy Payroll & Agent Services Team";
+
+
+          SimpleMailMessage message = new SimpleMailMessage();
+          message.setTo(email);
+          message.setSubject(subject);
+          message.setText(body);
+
+          mailSender.send(message);
+
+          log.info("Email sent successfully to {}", email);
+
+
+
+
+
+      }
+
+
+        return bankEntity;
+
+
+    }
+
+    @Override
+    public boolean existsByAgentId(Integer agentId) {
+
+        boolean exist = agentRepo.existsByAgentId(agentId);
+
+
+        return exist;
+    }
+
+    @Override
+    public AgentBankEntity findByAgentId(Integer agentId) {
+
+
+        return agentRepo.findByAgentId(agentId);
     }
 
 

@@ -12,7 +12,6 @@
     <!-- Bootstrap & Icons -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" rel="stylesheet">
-
     <!-- Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
 
@@ -30,10 +29,7 @@
         }
         .avatar-xl img { width:100%; height:100%; object-fit:cover; display:block; }
         .card { border:0; border-radius:16px; box-shadow:0 8px 22px rgba(0,0,0,.05); }
-        .badge-soft {
-            background:#f0fdf4; color:#166534; border:1px solid #bbf7d0;
-            padding:.4rem .6rem; border-radius:999px; font-size:.8rem;
-        }
+        .badge-soft { background:#f0fdf4; color:#166534; border:1px solid #bbf7d0; padding:.4rem .6rem; border-radius:999px; font-size:.8rem; }
         .pill { border:1px solid #e2e8f0; background:#f8fafc; padding:.35rem .65rem; border-radius:999px; font-size:.85rem; }
         .muted { color:#64748b; }
         .kbd { padding:.15rem .4rem; border:1px solid #cbd5e1; border-bottom-width:2px; border-radius:.35rem; background:#f8fafc; font-family:ui-monospace,Menlo,Consolas,monospace; font-size:.85rem; }
@@ -55,6 +51,10 @@
         <c:set var="agent" value="${sessionScope.loggedInAgent}" />
     </c:otherwise>
 </c:choose>
+
+<!-- Bank info injected by controller (may be null) -->
+<c:set var="bankInfo" value="${requestScope.bankInfo}" />
+<c:set var="hasBank" value="${not empty bankInfo}" />
 
 <!-- Safe name + initials -->
 <c:set var="firstName" value="${empty agent.firstName ? 'Agent' : agent.firstName}" />
@@ -86,6 +86,25 @@
     <c:if test="${not empty error}">
         <div class="alert alert-danger alert-dismissible fade show" role="alert">
             <i class="fa-solid fa-triangle-exclamation me-2"></i>${error}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    </c:if>
+    <!-- Bank module flashes -->
+    <c:if test="${not empty bankInfoMsg}">
+        <div class="alert alert-info alert-dismissible fade show" role="alert">
+            <i class="fa-solid fa-circle-info me-2"></i>${bankInfoMsg}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    </c:if>
+    <c:if test="${not empty bankError}">
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="fa-solid fa-triangle-exclamation me-2"></i>${bankError}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    </c:if>
+    <c:if test="${not empty bankSuccess}">
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="fa-solid fa-circle-check me-2"></i>${bankSuccess}
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
     </c:if>
@@ -125,9 +144,10 @@
     </div>
 
     <div class="row g-4">
-        <!-- Left: Details -->
+        <!-- Left: Details + Bank -->
         <div class="col-lg-7">
-            <div class="card">
+            <!-- Profile Details -->
+            <div class="card mb-4">
                 <div class="card-body p-4">
                     <h2 class="h5 mb-4"><i class="fa-solid fa-circle-info me-2 text-success"></i>Profile Details</h2>
 
@@ -165,11 +185,70 @@
                             </c:choose>
                         </div>
                     </div>
+                </div>
+            </div>
 
-                    <div class="alert alert-info mt-4 mb-0">
-                        <i class="fa-solid fa-lightbulb me-2"></i>
-                        Tip: Press <span class="kbd">Alt</span> + <span class="kbd">/</span> to quickly search actions.
+            <!-- Bank Details (read-only or CTA) -->
+            <div class="card">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <h2 class="h5 mb-0"><i class="fa-solid fa-building-columns me-2 text-success"></i>Bank Details</h2>
+                        <c:choose>
+                            <c:when test="${hasBank}">
+                                <span class="badge bg-secondary"><i class="fa-solid fa-lock me-1"></i>Locked</span>
+                            </c:when>
+                            <c:otherwise>
+                                <span class="badge bg-warning text-dark"><i class="fa-solid fa-circle-exclamation me-1"></i>Not Added</span>
+                            </c:otherwise>
+                        </c:choose>
                     </div>
+
+                    <c:choose>
+                        <c:when test="${hasBank}">
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <div class="label">Bank Name</div>
+                                    <div class="fw-semibold"><c:out value="${bankInfo.bankName}"/></div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="label">Branch</div>
+                                    <div class="fw-semibold"><c:out value="${bankInfo.branchName}"/></div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="label">Account Holder</div>
+                                    <div class="fw-semibold"><c:out value="${bankInfo.accountHolderName}"/></div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="label">IFSC</div>
+                                    <div class="fw-semibold"><c:out value="${bankInfo.ifsc}"/></div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="label">Account Number</div>
+                                    <div class="fw-semibold"><c:out value="${bankInfo.maskedAccountNumber}"/></div>
+                                    <div class="form-text">Full number hidden for your security.</div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="label">Account Type</div>
+                                    <div class="fw-semibold"><c:out value="${bankInfo.accountType}"/></div>
+                                </div>
+                            </div>
+                            <div class="alert alert-secondary d-flex align-items-center mt-3 mb-0" role="alert">
+                                <i class="fa-solid fa-shield-halved me-2"></i>
+                                Your bank details are locked to protect your payouts. To request a change, please contact Payroll Support or your branch admin.
+                            </div>
+                        </c:when>
+                        <c:otherwise>
+                            <p class="muted mb-3">
+                                You haven’t added bank details yet. These are required for payouts.
+                            </p>
+                            <a href="${ctx}/agent/profile/bank" class="btn btn-outline-success">
+                                <i class="fa-solid fa-plus me-2"></i>Add Bank Details
+                            </a>
+                            <div class="form-text mt-2">
+                                Bank details can be submitted only once. For later corrections, raise a Payroll Support request.
+                            </div>
+                        </c:otherwise>
+                    </c:choose>
                 </div>
             </div>
         </div>
