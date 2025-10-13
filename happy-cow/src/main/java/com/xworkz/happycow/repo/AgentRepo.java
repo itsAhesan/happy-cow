@@ -1,7 +1,11 @@
 package com.xworkz.happycow.repo;
 
 import com.xworkz.happycow.dto.AgentDTO;
+import com.xworkz.happycow.dto.BankForm;
 import com.xworkz.happycow.dto.PhotoDTO;
+import com.xworkz.happycow.entity.AgentAuditEntity;
+import com.xworkz.happycow.entity.AgentBankAuditEntity;
+import com.xworkz.happycow.entity.AgentBankEntity;
 import com.xworkz.happycow.entity.AgentEntity;
 
 import java.util.List;
@@ -37,4 +41,16 @@ public interface AgentRepo {
     PhotoDTO findPhotoDTOById(Integer id);
 
     void clearPhoto(Integer id);
+
+    boolean saveBankDetails(AgentBankEntity bankEntity);
+
+    boolean existsByAgentId(Integer agentId);
+
+    AgentBankEntity findByAgentId(Integer agentId);
+
+    void saveBankAudit(AgentBankAuditEntity bankAuditEntity);
+
+    void updateAgentAudit(AgentAuditEntity agentAuditEntity);
+
+    AgentAuditEntity findByAgentIdFromAgentAudit(Integer agentId);
 }
