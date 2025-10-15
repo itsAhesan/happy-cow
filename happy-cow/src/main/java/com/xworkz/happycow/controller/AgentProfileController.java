@@ -4,9 +4,11 @@ package com.xworkz.happycow.controller;
 import com.xworkz.happycow.dto.AgentDTO;
 import com.xworkz.happycow.dto.BankForm;
 import com.xworkz.happycow.dto.PhotoDTO;
+import com.xworkz.happycow.dto.ProductCollectionAndAgentDTO;
 import com.xworkz.happycow.entity.AgentBankEntity;
 import com.xworkz.happycow.entity.AgentEntity;
 import com.xworkz.happycow.service.AgentService;
+import com.xworkz.happycow.service.ProductCollectionService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.CacheControl;
@@ -25,6 +27,7 @@ import javax.servlet.http.HttpSession;
 import javax.validation.Valid;
 import java.security.Principal;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @Slf4j
@@ -126,34 +129,9 @@ public class AgentProfileController {
         return "redirect:/agent/profile/edit";
     }
 
-    // inside AgentProfileController
 
- /*   @GetMapping
-    public String viewProfile(Model model, HttpSession session) {
-        AgentDTO loggedInAgent = (AgentDTO) session.getAttribute("loggedInAgent");
-        if (loggedInAgent == null) {
-            return "redirect:/agentLogin";
-        }
 
-        // Optional: refresh from DB to avoid stale session data
-        try {
-            AgentEntity fresh = agentService.findByEmailEntity(loggedInAgent.getEmail());
-            AgentDTO dto = new AgentDTO();
-            dto.setAgentId(fresh.getAgentId());
-            dto.setFirstName(fresh.getFirstName());
-            dto.setLastName(fresh.getLastName());
-            dto.setEmail(fresh.getEmail());
-            dto.setPhoneNumber(fresh.getPhoneNumber());
-            dto.setAddress(fresh.getAddress());
-            dto.setTypesOfMilk(fresh.getTypesOfMilk());
-            model.addAttribute("agent", dto);
-        } catch (Exception e) {
-            // fallback to session object
-            model.addAttribute("agent", loggedInAgent);
-        }
 
-        return "agentProfile"; // <-- resolves to agentProfile.jsp
-    }*/
 
     @GetMapping
     public String viewProfile(Model model, HttpSession session) {
@@ -198,9 +176,9 @@ public class AgentProfileController {
         } else {
             model.addAttribute("bankInfo", null);
         }
-        // ------------------------------------------------------
 
-        return "agentProfile"; // resolves to agentProfile.jsp
+
+        return "agentProfile";
     }
 
     /** Mask account number like ************1234 (last 4 shown). */
@@ -213,7 +191,7 @@ public class AgentProfileController {
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < n - 4; i++) sb.append('*');
         sb.append(last4);
-        // optional: group with spaces every 4 for readability
+
         String masked = sb.toString();
         return masked.replaceAll("(.{4})(?=.)", "$1 ");
     }
@@ -248,18 +226,8 @@ public class AgentProfileController {
         // 3) Add the agent object expected by the JSP
         model.addAttribute("agent", agentForView);
 
-        // 4) Populate the quick stats & recent activity expected by agentLoginSuccess.jsp
-        //    (You can replace this with real data anytime.)
-      /*  DashboardStats stats = dashboardService.getStatsForAgent(agentForView.getAgentId());
 
-        model.addAttribute("totalDeliveries", stats.getTotalDeliveries());
-        model.addAttribute("pendingOrders", stats.getPendingOrders());
-        model.addAttribute("monthEarnings", stats.getMonthEarnings()); // ₹ shown in JSP
-        model.addAttribute("rating", stats.getRating());                // can be "—" or number
-        model.addAttribute("recentActivities", stats.getRecentActivities());*/
-
-        // 5) Render the JSP
-        return "agentLoginSuccess"; // resolves to agentLoginSuccess.jsp via your ViewResolver
+        return "agentLoginSuccess";
     }
 
 
@@ -343,46 +311,32 @@ public class AgentProfileController {
         return "bankDetailsForm"; // JSP name (bankDetailsForm.jsp)
     }
 
- /*   @PostMapping("/bank/save")
-    public String saveBankInfo(@Valid @ModelAttribute BankForm bankForm,
-                               BindingResult result,
-                               HttpSession session,
-                               RedirectAttributes ra) {
+    @Autowired
+    private ProductCollectionService productCollectionService;
+
+
+
+    @GetMapping("/orders")
+    public String showOrdersPage(HttpSession session, Model model) {
+
+
         AgentDTO loggedInAgent = (AgentDTO) session.getAttribute("loggedInAgent");
-        if (loggedInAgent == null) return "redirect:/agentLogin";
-
-        if (loggedInAgent.getAgentId() == null) {
-            ra.addFlashAttribute("bankError", "Please login again.");
-            return "redirect:/agent/profile";
-        }
-        if (!loggedInAgent.getAgentId().equals(bankForm.getAgentId())) {
-            ra.addFlashAttribute("bankError", "Invalid request.");
-            return "redirect:/agent/profile";
-        }
-        if (!bankForm.getAccountNumber().equals(bankForm.getConfirmAccountNumber())) {
-            result.rejectValue("confirmAccountNumber", "Match", "Account numbers must match.");
-        }
-        if (result.hasErrors()) {
-            ra.addFlashAttribute("bankError", "Please correct the highlighted errors.");
-            return "redirect:/agent/profile/bank";
+        if (loggedInAgent == null) {
+            return "redirect:/agentLogin";
         }
 
-        try {
-            String createdBy = String.valueOf(loggedInAgent.getAgentId());
-            agentService.saveFirstTime(bankForm, createdBy); // EM-based persist guarded by exists check + DB unique
-            ra.addFlashAttribute("bankSuccess",
-                    "Bank details submitted successfully. Further edits are locked. " +
-                            "To request a change, contact Payroll Support.");
-        } catch (IllegalStateException ex) {
-            ra.addFlashAttribute("bankInfoMsg",
-                    "Bank details already exist and are locked. For changes, please contact Payroll Support.");
-        } catch (IllegalArgumentException ex) {
-            ra.addFlashAttribute("bankError", ex.getMessage());
-        } catch (Exception ex) {
-            ra.addFlashAttribute("bankError", "Something went wrong. Please try again or contact support.");
-        }
-        return "redirect:/agent/profile";
-    }*/
+        List<ProductCollectionAndAgentDTO> detailsList =
+                productCollectionService.getDetailsDTOByAgentId(loggedInAgent.getAgentId());
+
+        // Add to model
+        model.addAttribute("detailsList", detailsList);
+
+        return "agentOrders";
+
+
+
+    }
+
 
 
 

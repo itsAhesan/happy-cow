@@ -269,6 +269,8 @@ public class AgentServiceImpl implements AgentService {
         agent.setOtpExpiry(LocalDateTime.now().plusMinutes(5));
         agentRepo.update(agent);
 
+        log.info("OTP is  {}", otp);
+
         try {
             SimpleMailMessage msg = new SimpleMailMessage();
             msg.setTo(email); // or agent.getEmail() if that’s your field
@@ -277,8 +279,10 @@ public class AgentServiceImpl implements AgentService {
                     + "Your OTP for login is: " + otp + "\n"
                     + "It is valid for 5 minutes.\n\n"
                     + "— HappyCow Dairy");
-              mailSender.send(msg);
+             mailSender.send(msg);
             log.info("OTP sent to {}", email);
+
+
             return true;
         } catch (Exception e) {
             log.error("Failed to send OTP to {}", email, e);
@@ -442,6 +446,43 @@ public class AgentServiceImpl implements AgentService {
 
 
         return agentRepo.findByAgentId(agentId);
+    }
+
+
+
+    @Override
+    public void saveOrUpdateBankDetails(BankForm form) {
+        AgentBankEntity agentBankEntity = agentRepo.findByAgentId(form.getAgentId());
+        AgentEntity agentEntity = agentRepo.findById(form.getAgentId());
+        log.info("Agent entity from update Bank: {}", agentEntity);
+
+            BeanUtils.copyProperties(form, agentBankEntity);
+        boolean updateBankDetails = agentRepo.updateBankDetails(agentBankEntity);
+
+        if(updateBankDetails){
+            AgentBankAuditEntity bankAuditEntity = agentRepo.findByAgentIdFromAgentBankAudit(agentBankEntity.getId());
+
+
+           bankAuditEntity.setUpdatedBy(agentEntity.getFirstName()+" "+agentEntity.getLastName());
+           bankAuditEntity.setUpdatedAt(LocalDateTime.now());
+            bankAuditEntity.setAgentBankEntity(agentBankEntity);
+
+            agentRepo.updateBankAudit(bankAuditEntity);
+            log.info("Bank audit updated successfully");
+
+
+            AgentAuditEntity agentAuditEntity = agentRepo.findByAgentIdFromAgentAudit(form.getAgentId());
+
+            agentAuditEntity.setUpdatedBy(agentEntity.getFirstName()+" "+agentEntity.getLastName());
+            agentAuditEntity.setUpdatedOn(LocalDateTime.now());
+            agentRepo.updateAgentAudit(agentAuditEntity);
+            log.info("Agent audit updated successfully");
+
+
+
+        }
+
+
     }
 
 

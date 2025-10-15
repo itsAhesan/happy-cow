@@ -31,31 +31,7 @@ public class AgentRestController {
         return !agentService.existsByPhoneNumber(phoneNumber);
     }
 
-   /* @GetMapping("/agentLogin/check-email")
-    public boolean checkEmailForLogin(@RequestParam String email) {
-        log.info("Checking email for login: {}", email);
-        return !agentService.existsByEmail(email);
-    }*/
 
-  /*  @GetMapping("/agentLogin/check-email")
-    public boolean checkEmailForLogin(@RequestParam String email) {
-        log.info("Checking email for login: {}", email);
-        return agentService.existsByEmail(email); // ✅ true if exists
-    }*/
-/*
-    @GetMapping("/agentLogin/check-email")
-    public boolean checkEmailForLogin(@RequestParam String email) {
-        log.info("Checking email for login: {}", email);
-        return agentService.existsByEmail(email); // ✅ true if exists (for login)
-    }*/
-    /*@GetMapping("/agentLogin/check-email")
-    public Map<String, Boolean> checkEmailForLogin(@RequestParam String email) {
-        log.info("Checking email for login: {}", email);
-        boolean exists = agentService.existsByEmail(email);
-        Map<String, Boolean> result = new HashMap<>();
-        result.put("exists", exists);
-        return result;  // JSON: { "exists": true } or { "exists": false }
-    }*/
 
 
     @GetMapping("agentLogin/check-email")

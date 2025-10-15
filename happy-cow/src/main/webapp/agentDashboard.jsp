@@ -28,7 +28,6 @@
         .card-header { font-weight: bold; background-color: #f8f9fa; }
         .card-footer { background-color: #ffffff; }
         .pagination .page-item.disabled .page-link { cursor: not-allowed; }
-        /* Search bar styling */
         .search-box input {
             border-radius: 30px;
             padding: 0.6rem 1rem;
@@ -42,6 +41,18 @@
         .search-box button {
             border-radius: 30px;
             font-weight: 500;
+        }
+
+        /* Button consistency */
+        .btn-sm i { margin-right: 4px; }
+        .btn-info {
+            background-color: #0dcaf0;
+            border-color: #0dcaf0;
+            color: white;
+        }
+        .btn-info:hover {
+            background-color: #0bb8de;
+            border-color: #0bb8de;
         }
     </style>
 </head>
@@ -156,6 +167,9 @@
                                 <a href="editAgent?id=${agent.agentId}" class="btn btn-sm btn-warning">
                                     <i class="fa-solid fa-pen-to-square"></i> Edit
                                 </a>
+                                <a href="agentBankDetails?id=${agent.agentId}" class="btn btn-sm btn-info">
+                                    <i class="fa-solid fa-building-columns"></i> Bank
+                                </a>
                                 <a href="#" class="btn btn-sm btn-danger"
                                    data-bs-toggle="modal" data-bs-target="#deleteModal"
                                    data-id="${agent.agentId}">
@@ -174,33 +188,27 @@
                 </div>
             </c:if>
 
-            <!-- Total Records Info -->
             <p class="text-center text-muted mt-3">
                 Showing ${(currentPage-1)*pageSize + 1} to
                 ${currentPage*pageSize > totalRecords ? totalRecords : currentPage*pageSize}
                 of ${totalRecords} agents
             </p>
 
-            <!-- Professional Pagination -->
             <c:if test="${totalPages > 1}">
                 <nav aria-label="Agent pagination">
                     <ul class="pagination justify-content-center mt-2">
-
-                        <!-- First Page -->
+                        <!-- Pagination logic (unchanged) -->
                         <li class="page-item <c:if test='${currentPage == 1}'>disabled</c:if>'">
                             <a class="page-link" href="agentDashboard?page=1&size=${pageSize}&search=${fn:escapeXml(param.search)}">
                                 <i class="fa-solid fa-angle-left"></i><i class="fa-solid fa-angle-left"></i>
                             </a>
                         </li>
-
-                        <!-- Previous -->
                         <li class="page-item <c:if test='${currentPage == 1}'>disabled</c:if>'">
                             <a class="page-link" href="agentDashboard?page=${currentPage - 1}&size=${pageSize}&search=${fn:escapeXml(param.search)}">
                                 <i class="fa-solid fa-angle-left"></i> Prev
                             </a>
                         </li>
 
-                        <!-- Sliding Window -->
                         <c:set var="startPage" value="${currentPage - 2}" />
                         <c:set var="endPage" value="${currentPage + 2}" />
                         <c:if test="${startPage < 1}"><c:set var="startPage" value="1"/></c:if>
@@ -220,20 +228,16 @@
                             <li class="page-item disabled"><span class="page-link">…</span></li>
                         </c:if>
 
-                        <!-- Next -->
                         <li class="page-item <c:if test='${currentPage == totalPages}'>disabled</c:if>'">
                             <a class="page-link" href="agentDashboard?page=${currentPage + 1}&size=${pageSize}&search=${fn:escapeXml(param.search)}">
                                 Next <i class="fa-solid fa-angle-right"></i>
                             </a>
                         </li>
-
-                        <!-- Last -->
                         <li class="page-item <c:if test='${currentPage == totalPages}'>disabled</c:if>'">
                             <a class="page-link" href="agentDashboard?page=${totalPages}&size=${pageSize}&search=${fn:escapeXml(param.search)}">
                                 <i class="fa-solid fa-angle-right"></i><i class="fa-solid fa-angle-right"></i>
                             </a>
                         </li>
-
                     </ul>
                 </nav>
             </c:if>

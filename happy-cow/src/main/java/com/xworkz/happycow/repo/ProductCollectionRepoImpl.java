@@ -164,5 +164,26 @@ public class ProductCollectionRepoImpl implements ProductCollectionRepo{
         }
     }
 
+    public List<ProductCollectionEntity> findByAgentIdWithRelations(Integer agentId) {
+        EntityManager em = null;
+        try {
+            em = emf.createEntityManager();
+
+            EntityGraph<ProductCollectionEntity> graph =
+                    em.createEntityGraph(ProductCollectionEntity.class);
+            graph.addAttributeNodes("agent", "admin");
+
+            return em.createQuery(
+                            "SELECT p FROM ProductCollectionEntity p WHERE p.agent.agentId = :agentId",
+                            ProductCollectionEntity.class)
+                    .setParameter("agentId", agentId)
+                    .setHint("javax.persistence.fetchgraph", graph)
+                    .getResultList();
+        } finally {
+            if (em != null) em.close();
+        }
+    }
+
+
 
 }

@@ -2,6 +2,8 @@ package com.xworkz.happycow.controller;
 
 import com.xworkz.happycow.dto.AdminDTO;
 import com.xworkz.happycow.dto.AgentDTO;
+import com.xworkz.happycow.dto.BankForm;
+import com.xworkz.happycow.entity.AgentBankEntity;
 import com.xworkz.happycow.entity.AgentEntity;
 import com.xworkz.happycow.service.AgentService;
 import lombok.extern.slf4j.Slf4j;
@@ -198,6 +200,50 @@ public class AgentController {
         redirectAttributes.addFlashAttribute("successMessage", "You have been logged out successfully.");
         return "redirect:/agentLogin";
     }
+
+    @GetMapping("agentBankDetails")
+    public String agentBankDetails(@RequestParam("id") Integer id,
+                                   HttpSession session,
+                                   Model model) {
+
+        AdminDTO admin = (AdminDTO) session.getAttribute("loggedInAdmin");
+        if (admin == null) {
+            return "redirect:/adminLogin";
+        }
+
+        AgentBankEntity bank = agentService.findByAgentId(id);  // returns null if not found
+
+        if (bank != null) {
+            model.addAttribute("bank", bank);
+            model.addAttribute("bankMsg", ""); // no message if details exist
+        } else {
+            model.addAttribute("bank", null);
+            model.addAttribute("bankMsg", "Bank details not added yet."); // professional message
+        }
+
+        // 5️⃣ Return the JSP view
+        return "agentBankDetails";
+    }
+
+
+    @PostMapping("saveBankDetails")
+    public String saveBankDetails(@ModelAttribute BankForm form, RedirectAttributes redirectAttributes,HttpSession session) {
+
+        AdminDTO admin = (AdminDTO) session.getAttribute("loggedInAdmin");
+        if (admin == null) {
+            return "redirect:/adminLogin";
+        }
+
+
+        agentService.saveOrUpdateBankDetails(form);
+        redirectAttributes.addFlashAttribute("success", "Bank details updated successfully!");
+        return "redirect:/agentBankDetails?id=" + form.getAgentId();
+    }
+
+
+
+
+
 
 
 

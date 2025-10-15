@@ -43,7 +43,7 @@
           </a>
         </li>
         <li class="nav-item">
-          <a class="nav-link" data-path="/agent/orders" href="${ctx}/agent/orders">
+          <a class="nav-link" data-path="/agent/orders" href="${ctx}/agent/profile/orders">
             <i class="fa-solid fa-list-check me-1"></i>Orders
           </a>
         </li>
