@@ -72,6 +72,7 @@ public class ProductServiceImpl implements ProductService {
         productEntity.setProductPrice(productDTO.getProductPrice());
         productEntity.setCreatedBy(adminName);
         productEntity.setCreatedAt(LocalDateTime.now());
+        productEntity.setProductType(productDTO.getProductType());
     /*    productEntity.setUpdatedBy(adminName);
         productEntity.setUpdatedAt(LocalDateTime.now());*/
 

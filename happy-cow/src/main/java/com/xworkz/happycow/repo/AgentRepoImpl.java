@@ -560,5 +560,86 @@ public class AgentRepoImpl implements AgentRepo {
 
     }
 
+    @Override
+    public boolean updateBankDetails(AgentBankEntity agentBankEntity) {
+        EntityManager em=null;
+        EntityTransaction et=null;
+        try {
+            em=emf.createEntityManager();
+            et=em.getTransaction();
+            et.begin();
+
+            em.merge(agentBankEntity);
+
+            et.commit();
+            return true;
+
+        } catch (Exception e) {
+            if (et != null && et.isActive()) {
+                et.rollback();
+            }
+
+            return false;
+
+        } finally {
+            if (em != null) {
+                em.close();
+            }
+        }
+
+    }
+
+    @Override
+    public AgentBankAuditEntity findByAgentIdFromAgentBankAudit(Integer bankId) {
+        EntityManager em = null;
+        try {
+            em = emf.createEntityManager();
+
+            return em.createQuery(
+                            "SELECT a FROM AgentBankAuditEntity a WHERE a.agentBankEntity.id = :bankId",
+                            AgentBankAuditEntity.class)
+                    .setParameter("bankId", bankId)
+                    .getSingleResult();
+
+        } catch (NoResultException e) {
+            log.warn("No AgentBankAuditEntity found for bankId: {}", bankId);
+            return null;
+        } catch (Exception e) {
+            log.error("Failed to find AgentBankAuditEntity by bankId: {}", bankId, e);
+            return null;
+        } finally {
+            if (em != null) em.close();
+        }
+    }
+
+
+    @Override
+    public void updateBankAudit(AgentBankAuditEntity bankAuditEntity) {
+        EntityManager em=null;
+        EntityTransaction et=null;
+        try {
+            em=emf.createEntityManager();
+            et=em.getTransaction();
+            et.begin();
+
+            em.merge(bankAuditEntity);
+
+            et.commit();
+
+
+        } catch (Exception e) {
+            if (et != null && et.isActive()) {
+                et.rollback();
+            }
+
+
+
+        } finally {
+            if (em != null) {
+                em.close();
+            }
+        }
+    }
+
 
 }

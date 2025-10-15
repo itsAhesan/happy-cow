@@ -53,4 +53,10 @@ public interface AgentRepo {
     void updateAgentAudit(AgentAuditEntity agentAuditEntity);
 
     AgentAuditEntity findByAgentIdFromAgentAudit(Integer agentId);
+
+    boolean updateBankDetails(AgentBankEntity agentBankEntity);
+
+    AgentBankAuditEntity findByAgentIdFromAgentBankAudit(Integer agentId);
+
+    void updateBankAudit(AgentBankAuditEntity bankAuditEntity);
 }

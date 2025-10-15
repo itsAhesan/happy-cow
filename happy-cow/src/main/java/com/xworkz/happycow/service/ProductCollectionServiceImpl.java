@@ -204,6 +204,9 @@ public class ProductCollectionServiceImpl implements ProductCollectionService{
     public ProductCollectionAndAgentDTO getDetailsDTO(Integer id) {
         // Make sure repo method uses the entity-graph version
         ProductCollectionEntity pc = productCollectionRepo.findByIdWithRelations(id);
+
+
+
         log.info("pc id: {}", pc.getProductCollectionId()); // safe log
 
         AgentEntity a = pc.getAgent(); // already loaded by graph
@@ -230,6 +233,44 @@ public class ProductCollectionServiceImpl implements ProductCollectionService{
     }
 
     private static String nullToEmpty(String s) { return s == null ? "" : s; }
+
+    @Override
+    public List<ProductCollectionAndAgentDTO> getDetailsDTOByAgentId(Integer agentId) {
+        // Fetch all collections for given agent, with relations loaded
+        List<ProductCollectionEntity> collections = productCollectionRepo.findByAgentIdWithRelations(agentId);
+
+        List<ProductCollectionAndAgentDTO> dtos = new ArrayList<>();
+
+        for (ProductCollectionEntity pc : collections) {
+            AgentEntity a = pc.getAgent();
+
+            ProductCollectionAndAgentDTO dto = new ProductCollectionAndAgentDTO();
+            dto.setProductCollectionId(pc.getProductCollectionId());
+
+            // Agent details
+            String first = a != null && a.getFirstName() != null ? a.getFirstName() : "";
+            String last  = a != null && a.getLastName()  != null ? a.getLastName()  : "";
+            dto.setAgentName((first + " " + last).trim());
+            dto.setAgentEmail(a != null ? nullToEmpty(a.getEmail())       : "");
+            dto.setAgentPhone(a != null ? nullToEmpty(a.getPhoneNumber()) : "");
+            dto.setAgentAddress(a != null ? nullToEmpty(a.getAddress())   : "");
+
+            // Product collection details
+            dto.setTypeOfMilk(pc.getTypeOfMilk());
+            dto.setPrice(pc.getPrice());
+            dto.setQuantity(pc.getQuantity());
+            dto.setTotalAmount(pc.getTotalAmount());
+          dto.setCollectedAt(pc.getCollectedAt()); // optional if you have it in DTO
+
+            dtos.add(dto);
+        }
+
+        log.info("Built {} DTOs for agent ID {}", dtos.size(), agentId);
+        return dtos;
+    }
+
+
+
 
 
 

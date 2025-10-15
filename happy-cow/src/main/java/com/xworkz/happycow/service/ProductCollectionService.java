@@ -15,4 +15,8 @@ public interface ProductCollectionService {
     List<ProductCollectionDTO> getAllProductCollectionsByDate(String date);
 
     ProductCollectionAndAgentDTO getDetailsDTO(Integer id);
+
+
+
+    List<ProductCollectionAndAgentDTO> getDetailsDTOByAgentId(Integer agentId);
 }

@@ -20,4 +20,6 @@ public interface ProductCollectionRepo {
     ProductCollectionEntity findById(Integer id);
 
     ProductCollectionEntity findByIdWithRelations(Integer id);
+
+    List<ProductCollectionEntity> findByAgentIdWithRelations(Integer agentId);
 }
