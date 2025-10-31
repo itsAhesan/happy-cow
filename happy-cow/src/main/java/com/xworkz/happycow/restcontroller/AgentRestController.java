@@ -32,10 +32,8 @@ public class AgentRestController {
     }
 
 
-
-
     @GetMapping("agentLogin/check-email")
-       public Map<String, Boolean> checkEmailForLogin(@RequestParam String email) {
+    public Map<String, Boolean> checkEmailForLogin(@RequestParam String email) {
         boolean exists = agentService.existsByEmail(email);
         // Use a concrete map for Java 8 compatibility
         Map<String, Boolean> body = new HashMap<>();
@@ -56,11 +54,11 @@ public class AgentRestController {
         Map<String, Object> m = new HashMap<>();
         boolean verified = agentService.verifyOtp(email, otp);
         if (verified) {
-            AgentEntity entity= agentService.findByEmail(email);
+            AgentEntity entity = agentService.findByEmail(email);
 
             log.info("Agent found: {}", entity);
 
-            AgentDTO agentDTO=new AgentDTO();
+            AgentDTO agentDTO = new AgentDTO();
 
 
             BeanUtils.copyProperties(entity, agentDTO);
@@ -79,15 +77,6 @@ public class AgentRestController {
         log.info("Otp Verified: {}", verified);
         return m;
     }
-
-
-
-
-
-
-
-
-
 
 
 }

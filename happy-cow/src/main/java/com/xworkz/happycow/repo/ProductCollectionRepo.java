@@ -22,4 +22,16 @@ public interface ProductCollectionRepo {
     ProductCollectionEntity findByIdWithRelations(Integer id);
 
     List<ProductCollectionEntity> findByAgentIdWithRelations(Integer agentId);
+
+    List<ProductCollectionEntity> findForAgentBetweenDates(Integer agentId, LocalDate startDate, LocalDate endDate);
+
+    // In ProductCollectionRepo interface
+    List<ProductCollectionRepoImpl.AgentPeriodAggregate> aggregateForAgentsBetweenDates(LocalDate start, LocalDate end);
+
+    Double sumTotalForAgent(Integer agentId);
+
+    // Optional: if you want total quantity as well
+    Double sumQuantityForAgent(Integer agentId);
+
+
 }

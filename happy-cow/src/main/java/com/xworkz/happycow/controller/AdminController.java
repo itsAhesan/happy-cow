@@ -2,10 +2,13 @@ package com.xworkz.happycow.controller;
 
 
 import com.xworkz.happycow.dto.AdminDTO;
+import com.xworkz.happycow.dto.PendingPaymentNotification;
 import com.xworkz.happycow.entity.AdminEntity;
 import com.xworkz.happycow.repo.AdminRepo;
 import com.xworkz.happycow.service.AdminService;
 import com.xworkz.happycow.service.AuditService;
+import com.xworkz.happycow.service.NotificationPushService;
+import com.xworkz.happycow.service.NotificationService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -16,6 +19,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import javax.servlet.http.HttpSession;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Slf4j
 @Controller
@@ -31,13 +35,109 @@ public class AdminController {
     @Autowired
     private AdminService adminService;
 
+
+    @Autowired
+    private NotificationPushService notificationPushService;
+
+    @Autowired
+    private NotificationService notificationService;
+
     @GetMapping("adminLogin")
     public String adminLogin() {
         log.info("admin login is working");
         return "adminLoginForm";
     }
 
+
+
     @PostMapping("adminLoginProcess")
+    public String adminLoginProcess(@RequestParam String email,
+                                    @RequestParam String password,
+                                    HttpSession session,
+                                    Model model) {
+        log.info("Admin login attempt for email: {}", email);
+        long startTime = System.currentTimeMillis();
+
+        AdminEntity adminEntity = adminService.findByEmailEntity(email);
+        log.debug("findByEmailEntity completed in {}ms", System.currentTimeMillis() - startTime);
+
+        if (adminEntity == null) {
+            log.warn("Login failed - no account found for email: {}", email);
+            model.addAttribute("errorMessage", "Invalid email or password");
+            return "adminLoginForm";
+        }
+
+        if (adminEntity.isAccountLocked()) {
+            log.warn("Login attempt on locked account: {}", email);
+            return "accountLocked";
+        }
+
+        boolean passwordMatches = adminService.checkPassword(password, adminEntity.getPassword());
+
+        if (!passwordMatches) {
+            // wrong password flow
+            adminService.increaseFailedAttempts(adminEntity);
+
+            if (adminEntity.getFailedAttempts() >= 3) {
+                adminService.lockAccount(adminEntity);
+                log.warn("Account locked due to 3 failed attempts: {}", email);
+                return "accountLocked";
+            }
+
+            log.warn("Invalid password attempt {} for email: {}", adminEntity.getFailedAttempts(), email);
+            model.addAttribute("errorMessage",
+                    "Invalid email or password, attempt left: " + (3 - adminEntity.getFailedAttempts()));
+            return "adminLoginForm";
+        }
+
+        // ✅ success path
+        adminService.resetFailedAttempts(adminEntity);
+
+        // Build session-safe DTO
+        AdminDTO adminDTO = new AdminDTO();
+        adminDTO.setAdminId(adminEntity.getAdminId());
+        adminDTO.setAdminName(adminEntity.getAdminName());
+        adminDTO.setEmailId(adminEntity.getEmailId());
+        adminDTO.setPhoneNumber(adminEntity.getPhoneNumber());
+        adminDTO.setProfilePicture(adminEntity.getProfilePicture());
+        adminDTO.setProfilePictureContentType(adminEntity.getProfilePictureContentType());
+
+        // Audit login
+        auditService.logAdminLogin(adminEntity);
+
+        // Clear any stale bell data from an old session (if browser reused a JSESSIONID)
+        session.removeAttribute("BELL_ITEMS");
+        session.removeAttribute("BELL_COUNT");
+
+        // Put logged-in admin in session
+        session.setAttribute("loggedInAdmin", adminDTO);
+
+        // 🔹 Preload notifications into session so adminDashboard can SSR them on first paint
+        try {
+            List<PendingPaymentNotification> notifs = notificationService.buildLoginNotifications();
+            session.setAttribute("BELL_ITEMS", notifs);
+            session.setAttribute("BELL_COUNT", notifs != null ? notifs.size() : 0);
+            log.debug("Preloaded {} notifications into session for {}",
+                    (notifs != null ? notifs.size() : 0), adminDTO.getEmailId());
+        } catch (Exception e) {
+            log.error("Failed to build notifications at login for {}", adminDTO.getEmailId(), e);
+            // Keep UI resilient
+            session.setAttribute("BELL_ITEMS", java.util.Collections.emptyList());
+            session.setAttribute("BELL_COUNT", 0);
+        }
+
+        log.info("Login successful for email: {} in {}ms",
+                email, System.currentTimeMillis() - startTime);
+
+        // ❌ Do NOT push via WebSocket here — the client is not yet subscribed
+        // notificationPushService.sendToUser(adminDTO.getEmailId(), notifs);
+
+        // ✅ PRG: redirect so the browser loads adminDashboard, where JSP will SSR notifications
+        return "redirect:/adminDashboard";
+    }
+
+
+  /*  @PostMapping("adminLoginProcess")
     public String adminLoginProcess(@RequestParam String email,
                                     @RequestParam String password,
                                     HttpSession session,
@@ -85,7 +185,17 @@ public class AdminController {
             log.info("Login successful for email: {} in {}ms",
                     email, System.currentTimeMillis() - startTime);
 
-            return "adminDashboard";
+            // 1) Build notifications
+            List<PendingPaymentNotification> notifs = notificationService.buildLoginNotifications();
+
+            // 2) Store in session (helps AJAX fallback and JSP SSR if needed)
+            session.setAttribute("BELL_ITEMS", notifs);
+            session.setAttribute("BELL_COUNT", notifs.size());
+
+            // 3) Push to this admin’s user queue (so the dropdown populates in realtime)
+          //  notificationPushService.sendToUser(adminDTO.getEmailId(), notifs);
+
+            return "redirect:/adminDashboard";
         } else {
             // ❌ Wrong password → increment failed attempts
             adminService.increaseFailedAttempts(adminEntity);
@@ -100,9 +210,9 @@ public class AdminController {
             model.addAttribute("errorMessage", "Invalid email or password, attempt left: "+(3-adminEntity.getFailedAttempts()));
             return "adminLoginForm";
         }
-    }
+    }*/
 
-    @GetMapping("adminDashboard")
+ /*   @GetMapping("adminDashboard")
     public String showAdminDashboard(HttpSession session, Model model) {
         // Check if admin is logged in
         AdminDTO loggedInAdmin = (AdminDTO) session.getAttribute("loggedInAdmin");
@@ -116,7 +226,33 @@ public class AdminController {
         model.addAttribute("loggedInAdmin", loggedInAdmin);
 
         return "adminDashboard"; // maps to adminDashboard.jsp
+    }*/
+
+    // AdminController
+  //  @Autowired private NotificationService notificationService;
+
+    @GetMapping("adminDashboard")
+    public String showAdminDashboard(HttpSession session, Model model) {
+        AdminDTO loggedInAdmin = (AdminDTO) session.getAttribute("loggedInAdmin");
+        if (loggedInAdmin == null) {
+            return "redirect:/adminLogin";
+        }
+
+        // Preload notifications for first paint (SSR)
+        @SuppressWarnings("unchecked")
+        List<PendingPaymentNotification> items =
+                (List<PendingPaymentNotification>) session.getAttribute("BELL_ITEMS");
+
+        if (items == null) {
+            items = notificationService.buildLoginNotifications();
+            session.setAttribute("BELL_ITEMS", items);
+            session.setAttribute("BELL_COUNT", items.size());
+        }
+
+        model.addAttribute("loggedInAdmin", loggedInAdmin);
+        return "adminDashboard";
     }
+
 
 
     @GetMapping("adminProfile")
