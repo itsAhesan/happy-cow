@@ -49,7 +49,7 @@
 <section class="container py-4">
     <nav aria-label="breadcrumb" class="mb-4">
         <ol class="breadcrumb mb-0">
-            <li class="breadcrumb-item"><a href="${ctx}/dashboard">Dashboard</a></li>
+            <li class="breadcrumb-item"><a href="${ctx}/agent/profile/dashboard">Dashboard</a></li>
             <li class="breadcrumb-item active" aria-current="page">Orders</li>
         </ol>
     </nav>
@@ -132,7 +132,7 @@
 
     <!-- Actions -->
     <div class="text-center mt-5">
-        <a href="${ctx}/dashboard" class="btn btn-outline-success btn-lg me-2">
+        <a href="${ctx}/agent/profile/dashboard" class="btn btn-outline-success btn-lg me-2">
             <i class="fa-solid fa-arrow-left me-2"></i>Back to Dashboard
         </a>
         <a href="${ctx}/agent/profile" class="btn btn-success btn-lg">

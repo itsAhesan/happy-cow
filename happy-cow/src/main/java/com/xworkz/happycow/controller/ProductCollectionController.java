@@ -39,10 +39,10 @@ public class ProductCollectionController {
 
         List<ProductDTO> products = productCollectionService.getAllProductsByTypesOfMilk();
 
-        model.addAttribute("products",products);
+        model.addAttribute("products", products);
 
         log.info("ProductCollectionController is working");
-        log.info("products: {}",products);
+        log.info("products: {}", products);
 
 
         return "productCollection";
@@ -62,10 +62,9 @@ public class ProductCollectionController {
         }
 
         log.info("ProductCollectionController save is working");
-        log.info("dto: {}",dto);
+        log.info("dto: {}", dto);
 
         productCollectionService.saveProductCollection(dto, loggedInAdmin);
-
 
 
         redirectAttributes.addFlashAttribute("successMessage", "Product collection added successfully.");
@@ -84,12 +83,12 @@ public class ProductCollectionController {
         List<ProductCollectionDTO> productCollections = productCollectionService.getAllProductCollectionsByDate(date);
 
 
-       log.info("productCollections: {}",productCollections);
+        log.info("productCollections: {}", productCollections);
         model.addAttribute("collections", productCollections);
 
 
-       // List<ProductCollectionEntity> collections = queryService.list(date);
-        model.addAttribute("collections", productCollections);
+        // List<ProductCollectionEntity> collections = queryService.list(date);
+      //  model.addAttribute("collections", productCollections);
         model.addAttribute("date", date == null ? "" : date);
 
         return "productCollectionList";
@@ -99,7 +98,7 @@ public class ProductCollectionController {
     @ResponseBody
     public ResponseEntity<ProductCollectionAndAgentDTO> details(@RequestParam Integer id) {
         log.info("details method started");
-        log.info("id: {}",id);
+        log.info("id: {}", id);
         try {
             return ResponseEntity.ok(productCollectionService.getDetailsDTO(id));
         } catch (IllegalArgumentException e) {
