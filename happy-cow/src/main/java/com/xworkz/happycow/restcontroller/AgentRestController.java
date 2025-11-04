@@ -68,7 +68,7 @@ public class AgentRestController {
 
             session.setAttribute("loggedInAgent", agentDTO);
 
-            log.info("Agent logged in successfully: {}", agentDTO);
+          //  log.info("Agent logged in successfully: {}", agentDTO);
 
 
         }

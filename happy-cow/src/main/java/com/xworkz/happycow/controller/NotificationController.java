@@ -26,7 +26,7 @@ public class NotificationController {
 
     private final NotificationService notificationService;
 
-    @GetMapping(value = "/notifications", produces = "application/json")
+    @GetMapping(value = "/notifications", produces = "application/json; charset=UTF-8")
     @ResponseBody
     public Map<String, Object> getNotificationsForLogin(HttpSession session) {
         // Optional: cache in session so you don't recompute several times during one visit

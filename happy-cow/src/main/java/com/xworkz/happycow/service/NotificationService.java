@@ -1,37 +1,37 @@
 package com.xworkz.happycow.service;
 
 import com.xworkz.happycow.dto.PendingPaymentNotification;
-import com.xworkz.happycow.entity.AgentAuditEntity;
-import com.xworkz.happycow.repo.AgentAuditRepo;
 import com.xworkz.happycow.repo.AgentPaymentWindowRepo;
+import com.xworkz.happycow.repo.AgentAuditRepo;
 import com.xworkz.happycow.repo.ProductCollectionRepo;
 import com.xworkz.happycow.repo.ProductCollectionRepoImpl.AgentPeriodAggregate;
 import com.xworkz.happycow.util.BiMonthlyPayCalendar;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.time.ZoneId;
-import java.time.temporal.ChronoUnit;
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class NotificationService {
 
     @Autowired
-    private  AgentAuditRepo agentAuditRepo;
+    private AgentAuditRepo agentAuditRepo;
 
     @Autowired
     private ProductCollectionRepo productCollectionRepo;
 
     private static final ZoneId ZONE = ZoneId.of("Asia/Kolkata");
-
 
     @Autowired
     private AgentPaymentWindowRepo paymentRepo;
@@ -49,7 +49,7 @@ public class NotificationService {
         List<AgentPeriodAggregate> aggs =
                 productCollectionRepo.aggregateForAgentsBetweenDates(payable.getStart(), payable.getEnd());
 
-        if (aggs.isEmpty()) return java.util.Collections.emptyList();
+        if (aggs == null || aggs.isEmpty()) return java.util.Collections.emptyList();
 
         // Build notifications only for unpaid agents with non-zero amounts
         return aggs.stream()
@@ -62,15 +62,28 @@ public class NotificationService {
                     BigDecimal amount = new BigDecimal(String.valueOf(a.sumTotalAmount))
                             .setScale(2, java.math.RoundingMode.HALF_UP);
 
-                    String msg = "Salary window " + payable.getLabel()
-                            + " • " + a.countRows + " collections • Amount ₹" + amount;
+                    // Try to recover/normalize label
+                    String rawLabel = payable.getLabel();
+                    String fixedLabel = recoverLabelHeuristically(rawLabel);
+
+                    // Normalize spacing and prefer en-dash for ranges
+                    if (fixedLabel != null) {
+                        fixedLabel = fixedLabel.trim()
+                                .replaceAll("\\s*-\\s*", " \u2013 ")   // ascii hyphen -> en-dash
+                                .replaceAll("[–—]+", "\u2013");       // various dashes -> en-dash
+                    } else {
+                        fixedLabel = "";
+                    }
+
+                    String msg = "Salary window " + fixedLabel
+                            + " \u2022 " + a.countRows + " collections \u2022 Amount \u20B9" + amount;
 
                     return PendingPaymentNotification.builder()
                             .agentId(a.agentId)
                             .agentName(fullName.trim().isEmpty() ? "Agent " + a.agentId : fullName)
                             .email(a.email)
                             .phoneNumber(a.phoneNumber)
-                            .createdOn(java.time.LocalDateTime.now(ZONE)) // when we generated
+                            .createdOn(java.time.LocalDateTime.now(ZONE))
                             .ageInDays(0L)
                             .message(msg)
                             .link("/agent/" + a.agentId +
@@ -81,99 +94,88 @@ public class NotificationService {
                 .collect(Collectors.toList());
     }
 
-   /* public List<PendingPaymentNotification> buildLoginNotifications() {       //working
-        LocalDate today = LocalDate.now(ZONE);
-        LocalDate start = today.minusDays(15);
-        LocalDate end   = today.minusDays(1);
+    /**
+     * Try several heuristics to recover the label text:
+     * 1) If it looks clean, return it.
+     * 2) If it contains common mojibake patterns, try:
+     *    - ISO-8859-1 -> UTF-8 decode
+     *    - Windows-1252 -> UTF-8 decode
+     * 3) Try simple string replacements of common mangled fragments (e.g. sequences starting with "â€")
+     * 4) Fallback: if label contains two numbers with garbage in between (like "16??31"), replace with en-dash.
+     *
+     * Logs what strategy fixed it (if any).
+     */
+    private String recoverLabelHeuristically(String raw) {
+        if (raw == null) return null;
 
-        List<AgentAuditEntity> audits = agentAuditRepo.findCreatedBetweenWithAgent(
-                start.atStartOfDay(), end.atTime(java.time.LocalTime.MAX));
+        // If already looks OK (contains normal digits and either en-dash or hyphen or plain words), return early
+        if (!containsMojibake(raw) && !raw.contains("\uFFFD")) {
+            return raw;
+        }
 
-        return audits.stream()
-                .filter(audit -> {
-                    Integer aid = audit.getAgent().getAgentId();
-                    // skip if window already paid (exact match or overlap if you prefer stricter)
-                    return !paymentRepo.existsForWindow(aid, start, end);
-                })
-                .map(audit -> {
-                    long age = java.time.temporal.ChronoUnit.DAYS.between(
-                            audit.getCreatedOn().atZone(java.time.ZoneId.systemDefault()).withZoneSameInstant(ZONE).toLocalDate(),
-                            LocalDate.now(ZONE));
-                    String agentName = (audit.getAgent() != null)
-                            ? audit.getAgent().getFirstName() + (audit.getAgent().getLastName() != null ? " " + audit.getAgent().getLastName() : "")
-                            : audit.getAgentName();
+        log.info("Label appears corrupted, attempting recovery. raw='{}'", raw);
 
-                    return PendingPaymentNotification.builder()
-                            .agentId(audit.getAgent().getAgentId())
-                            .agentName(agentName)
-                            .email(audit.getAgent().getEmail())
-                            .phoneNumber(audit.getAgent().getPhoneNumber())
-                            .createdOn(audit.getCreatedOn())
-                            .ageInDays(age)
-                            .message("Payment pending for last 15 days window")
-                            .link("/agent/" + audit.getAgent().getAgentId() + "/product-collections")
-                            .build();
-                })
-                .collect(java.util.stream.Collectors.toList());
+        // 1) try ISO-8859-1 -> UTF-8
+        try {
+            String isoToUtf = new String(raw.getBytes(StandardCharsets.ISO_8859_1), StandardCharsets.UTF_8);
+            if (!containsMojibake(isoToUtf) && !isoToUtf.contains("\uFFFD")) {
+                log.info("Recovered label by ISO-8859-1 -> UTF-8: '{}' -> '{}'", raw, isoToUtf);
+                return isoToUtf;
+            }
+        } catch (Exception e) {
+            log.debug("ISO->UTF attempt failed: {}", e.getMessage());
+        }
+
+        // 2) try Windows-1252 -> UTF-8 (covers some Windows-specific bytes)
+        try {
+            Charset win1252 = Charset.forName("windows-1252");
+            String winToUtf = new String(raw.getBytes(win1252), StandardCharsets.UTF_8);
+            if (!containsMojibake(winToUtf) && !winToUtf.contains("\uFFFD")) {
+                log.info("Recovered label by Windows-1252 -> UTF-8: '{}' -> '{}'", raw, winToUtf);
+                return winToUtf;
+            }
+        } catch (Exception e) {
+            log.debug("Windows-1252->UTF attempt failed: {}", e.getMessage());
+        }
+
+        // 3) quick heuristic replace of common mangled fragments like "â€“", "â€”", "â€œ", "â€\u009d" etc.
+        String heuristic = raw
+                .replaceAll("â€“|â€”|â€", "\u2013")   // attempt to normalize several variants to en-dash
+                .replaceAll("â€¢|â€¢", "\u2022")
+                .replaceAll("â‚¹|â‚«|â‚»", "\u20B9")
+                .replaceAll("[\\uFFFD\\?]+", ""); // remove replacement chars and stray question marks
+        if (!containsMojibake(heuristic) && !heuristic.isEmpty()) {
+            log.info("Recovered label by heuristic replacements: '{}' -> '{}'", raw, heuristic);
+            return heuristic;
+        }
+
+        // 4) Last resort: if label looks like "16??31" — replace garbage between two numbers with en-dash
+        String fallback = raw.replaceAll("(\\d{1,2})\\D{1,10}(\\d{1,2})", "$1 \u2013 $2");
+        if (!containsMojibake(fallback) && !fallback.equals(raw)) {
+            log.info("Recovered label by numeric-range fallback: '{}' -> '{}'", raw, fallback);
+            return fallback;
+        }
+
+        // Nothing recovered — log a hex dump for diagnostics (inspect logs)
+        log.warn("Failed to reliably recover label; raw bytes (UTF-8 hex): {}", hexDump(raw.getBytes(StandardCharsets.UTF_8)));
+        return raw; // return original so we don't hide data
     }
 
-*/
+    private boolean containsMojibake(String s) {
+        if (s == null) return false;
+        // common mojibake fragments:
+        return s.contains("â€“") || s.contains("â€”") || s.contains("â€¢") || s.contains("â‚¹") ||
+                s.contains("â€") || s.contains("\uFFFD") || s.contains("??");
+    }
 
-/*
-    public List<PendingPaymentNotification> buildLoginNotifications() {
-        // Window: 15 days ago 00:00:00  →  13 days ago 23:59:59.999 (inclusive)
-        LocalDate today = LocalDate.now(ZONE);
-        LocalDateTime start = today.minusDays(15).atStartOfDay();
-        LocalDateTime end   = today.minusDays(13).atTime(LocalTime.MAX);
-
-        List<AgentAuditEntity> audits = agentAuditRepo.findCreatedBetweenWithAgent(start, end);
-
-        return audits.stream().map(audit -> {
-            long age = ChronoUnit.DAYS.between(
-                    audit.getCreatedOn().atZone(ZoneId.systemDefault()).withZoneSameInstant(ZONE).toLocalDate(),
-                    LocalDate.now(ZONE)
-            );
-            String agentName = (audit.getAgent() != null)
-                    ? audit.getAgent().getFirstName() + (audit.getAgent().getLastName() != null ? " " + audit.getAgent().getLastName() : "")
-                    : audit.getAgentName();
-
-           *//* return PendingPaymentNotification.builder()
-                    .agentId(audit.getAgent().getAgentId())
-                    .agentName(agentName)
-                    .email(audit.getAgent().getEmail())
-                    .phoneNumber(audit.getAgent().getPhoneNumber())
-                    .createdOn(audit.getCreatedOn())
-                    .ageInDays(age)
-                    .message("Payment pending since " + age + " days")
-                    .link("/agent/" + audit.getAgent().getAgentId() + "/product-collections?window=13-15")
-                    .build();*//*
-
-            return PendingPaymentNotification.builder()
-                    .agentId(audit.getAgent().getAgentId())
-                    .agentName(agentName)
-                    .email(audit.getAgent().getEmail())
-                    .phoneNumber(audit.getAgent().getPhoneNumber())
-                    .createdOn(audit.getCreatedOn())
-                    .ageInDays(age)
-                    .message("Payment pending since " + age + " days")
-                    // 👇 include auditId so the page uses THIS audit's createdOn as base
-                    .link("/agent/" + audit.getAgent().getAgentId()
-                            + "/product-collections?window=13-15&auditId=" + audit.getAuditId())
-                    .build();
-
-        }).collect(java.util.stream.Collectors.toList());
-    }*/
-
-    // Click-through helper
-  /*  public ProductCollectionView getProductCollectionsForAgentWindow(Integer agentId) {
-        LocalDate today = LocalDate.now(ZONE);
-        LocalDate startDate = today.minusDays(15);
-        LocalDate endDate   = today.minusDays(13);
-        return new ProductCollectionView(
-                agentId,
-                productCollectionRepo.findForAgentBetweenDates(agentId, startDate, endDate)
-        );
-    }*/
+    private String hexDump(byte[] bytes) {
+        if (bytes == null) return "";
+        StringBuilder sb = new StringBuilder();
+        for (byte b : bytes) {
+            sb.append(String.format("%02X", b)).append(" ");
+        }
+        return sb.toString().trim();
+    }
 
     @lombok.Value
     public static class ProductCollectionView {

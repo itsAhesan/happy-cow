@@ -100,6 +100,7 @@
             <a href="#"><i class="fa-solid fa-chart-line me-2"></i> Reports</a>
             <a href="productCollection"><i class="fa-solid fa-boxes-packing me-2"></i> Product Collection</a>
             <a href="productCollectionList"><i class="fa-solid fa-table-list me-2"></i> View Collections</a>
+           <a href="${pageContext.request.contextPath}/payments/history"><i class="fa-solid fa-receipt me-2"></i> Payment History</a>
             <a href="logout" class="text-danger"><i class="fa-solid fa-right-from-bracket me-2"></i> Logout</a>
         </div>
 

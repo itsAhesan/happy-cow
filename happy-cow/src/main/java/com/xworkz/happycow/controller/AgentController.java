@@ -185,7 +185,7 @@ public class AgentController {
             return "redirect:/agentLogin";
         }
 
-        log.info("Agent logged in successfully: {}", loggedInAgent);
+      //  log.info("Agent logged in successfully: {}", loggedInAgent);
 
         model.addAttribute("agent", loggedInAgent);
 
