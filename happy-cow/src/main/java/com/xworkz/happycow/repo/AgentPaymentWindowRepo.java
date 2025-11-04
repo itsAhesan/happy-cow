@@ -1,5 +1,6 @@
 package com.xworkz.happycow.repo;
 
+import com.xworkz.happycow.dto.PaymentWindowDTO;
 import com.xworkz.happycow.entity.AgentPaymentWindowEntity;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -120,6 +121,58 @@ public class AgentPaymentWindowRepo {
             return n != null ? n.doubleValue() : 0.0;
         } finally {
             if (em != null) em.close();
+        }
+    }
+
+    public List<AgentPaymentWindowEntity> findAll() {
+        EntityManager em = emf.createEntityManager();
+        try {
+            return em.createQuery("SELECT p FROM AgentPaymentWindowEntity p ORDER BY p.settledAt DESC NULLS LAST, p.windowStartDate DESC", AgentPaymentWindowEntity.class)
+                    .getResultList();
+        } finally { em.close(); }
+    }
+
+    public List<PaymentWindowDTO> findAllAsDto() {
+        EntityManager em = emf.createEntityManager();
+        try {
+            String q = "SELECT new com.xworkz.happycow.dto.PaymentWindowDTO(" +
+                    "p.paymentId, " +
+                    "p.agent.agentId, " +
+                    "CONCAT(COALESCE(p.agent.firstName, ''), ' ', COALESCE(p.agent.lastName, '')), " +
+                    "p.agent.email, " +
+                    "p.agent.phoneNumber, " +
+                    "p.windowStartDate, " +
+                    "p.windowEndDate, " +
+                    "p.grossAmount, " +
+                    "p.status, " +
+                    "p.settledAt, " +
+                    "p.referenceNo, " +
+                    "p.createdOn" +
+                    ") FROM AgentPaymentWindowEntity p " +
+                    "ORDER BY CASE WHEN p.settledAt IS NULL THEN 1 ELSE 0 END, p.settledAt DESC, p.windowStartDate DESC";
+
+            return em.createQuery(q, PaymentWindowDTO.class)
+                    .getResultList();
+        } finally {
+            em.close();
+        }
+    }
+
+
+    public List<PaymentWindowDTO> findByAgentAsDto(Integer agentId) {
+        EntityManager em = emf.createEntityManager();
+        try {
+            String q = "SELECT new com.xworkz.happycow.dto.PaymentWindowDTO(" +
+                    "p.paymentId, p.agent.agentId, CONCAT(COALESCE(p.agent.firstName, ''), ' ', COALESCE(p.agent.lastName, '')), " +
+                    "p.agent.email, p.agent.phoneNumber, p.windowStartDate, p.windowEndDate, p.grossAmount, p.status, p.settledAt, p.referenceNo, p.createdOn" +
+                    ") FROM AgentPaymentWindowEntity p " +
+                    "WHERE p.agent.agentId = :aid " +
+                    "ORDER BY CASE WHEN p.settledAt IS NULL THEN 1 ELSE 0 END, p.settledAt DESC, p.windowStartDate DESC";
+            return em.createQuery(q, PaymentWindowDTO.class)
+                    .setParameter("aid", agentId)
+                    .getResultList();
+        } finally {
+            em.close();
         }
     }
 

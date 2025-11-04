@@ -19,10 +19,27 @@ public class EmailServiceImpl implements EmailService {
 
 
     @Override
-    public void sendPaymentSuccessToAdmin(Integer agentId, String agentName, LocalDate from, LocalDate to, BigDecimal amount, String referenceNo) {
+    public void sendPaymentSuccessToAdmin(String adminEmail, Integer agentId, String agentName, LocalDate from, LocalDate to, BigDecimal amount, String referenceNo) {
         // TODO integrate JavaMailSender or your SMTP impl
 
 
+        SimpleMailMessage msg = new SimpleMailMessage();
+        msg.setTo(adminEmail);
+        msg.setSubject("HappyCow Dairy - Agent Payment Received");
+
+        msg.setText("Dear Admin,\n\n"
+                + "A payment from an agent has been successfully processed.\n\n"
+                + "Agent Details:\n"
+                + "----------------------------\n"
+                + "Agent ID: " + agentId + "\n"
+                + "Agent Name: " + agentName + "\n"
+                + "Payment Period: " + from + " to " + to + "\n"
+                + "Amount: " + amount + "\n"
+                + "Reference No: " + referenceNo + "\n\n"
+                + "Please verify and update the payment records accordingly.\n\n"
+                + "— HappyCow Dairy System");
+
+        mailSender.send(msg);
 
 
 

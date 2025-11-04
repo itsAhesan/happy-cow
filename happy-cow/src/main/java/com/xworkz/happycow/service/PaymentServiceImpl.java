@@ -1,5 +1,6 @@
 package com.xworkz.happycow.service;
 
+import com.xworkz.happycow.dto.PaymentWindowDTO;
 import com.xworkz.happycow.entity.AdminEntity;
 import com.xworkz.happycow.entity.AgentEntity;
 import com.xworkz.happycow.entity.AgentPaymentWindowEntity;
@@ -87,7 +88,7 @@ public class PaymentServiceImpl implements PaymentService {
         // Emails
         String agentName = (agent.getFirstName() != null ? agent.getFirstName() : "") +
                 (agent.getLastName() != null ? " " + agent.getLastName() : "");
-        emailService.sendPaymentSuccessToAdmin(agentId, agentName, from, to, serverTotal, pay.getReferenceNo());
+        emailService.sendPaymentSuccessToAdmin(admin.getEmailId(),agentId, agentName, from, to, serverTotal, pay.getReferenceNo());
         emailService.sendPaymentSuccessToAgent(agent.getEmail(), agentName, from, to, serverTotal, pay.getReferenceNo());
 
         log.info("Payment settled: agentId={}, window {}..{}, amount={}, ref={}",
@@ -104,4 +105,23 @@ public class PaymentServiceImpl implements PaymentService {
     private static String genRef(Integer agentId, LocalDate from, LocalDate to) {
         return "PMT-" + agentId + "-" + from + "-" + to + "-" + UUID.randomUUID().toString().substring(0,8).toUpperCase();
     }
+
+    public List<AgentPaymentWindowEntity> getAllPaymentWindows() {
+        return paymentRepo.findAll();
+    }
+
+    public List<AgentPaymentWindowEntity> getPaymentWindowsForAgent(Integer agentId) {
+        return paymentRepo.findByAgent(agentId);
+    }
+
+    public List<PaymentWindowDTO> getAllPaymentWindowsDto() {
+        return paymentRepo.findAllAsDto();
+    }
+    public List<PaymentWindowDTO> getPaymentWindowsForAgentDto(Integer agentId) {
+        return paymentRepo.findByAgentAsDto(agentId);
+    }
+
+
+
+
 }
