@@ -18,7 +18,9 @@ import java.time.LocalDateTime;
 )
 @Getter
 @Setter
-@ToString
+//@ToString
+@ToString(exclude = {"agent", "settledByAdmin"})
+
 public class AgentPaymentWindowEntity {
 
     @Id
@@ -57,4 +59,6 @@ public class AgentPaymentWindowEntity {
 
     @Column(name = "updated_on")
     private LocalDateTime updatedOn;
+
+
 }

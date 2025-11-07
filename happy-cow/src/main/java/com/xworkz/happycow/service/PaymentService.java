@@ -1,11 +1,13 @@
 package com.xworkz.happycow.service;
 
+import com.xworkz.happycow.dto.PaymentViewDTO;
 import com.xworkz.happycow.dto.PaymentWindowDTO;
 import com.xworkz.happycow.entity.AgentPaymentWindowEntity;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 
 public interface PaymentService {
     /**
@@ -22,4 +24,14 @@ public interface PaymentService {
     List<PaymentWindowDTO> getAllPaymentWindowsDto();
 
     List<PaymentWindowDTO> getPaymentWindowsForAgentDto(Integer agentId);
+
+    List<PaymentViewDTO> findPaymentsByAgentId(Integer agentId);
+
+    Optional<PaymentViewDTO> findPaymentByIdAndAgentId(Long paymentId, Integer agentId);
+    
+    
+/*
+    List<AgentPaymentWindowEntity> findPaymentsByAgentId(Integer agentId);
+
+    List<AgentPaymentWindowEntity> findPaymentByIdAndAgentId(Long paymentId, Integer agentId);*/
 }

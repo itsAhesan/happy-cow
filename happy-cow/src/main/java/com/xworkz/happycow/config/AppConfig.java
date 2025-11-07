@@ -60,6 +60,9 @@ public class AppConfig implements WebMvcConfigurer {
         registry.addResourceHandler("/css/**").addResourceLocations("/css/");
         registry.addResourceHandler("/js/**").addResourceLocations("/js/");
         registry.addResourceHandler("/uploads/**").addResourceLocations("file:///D:/File Folder/");
+        registry.addResourceHandler("/fonts/**").addResourceLocations("/fonts/");
+
+
 
         registry.addResourceHandler("swagger-ui.html")
                 .addResourceLocations("classpath:/META-INF/resources/");

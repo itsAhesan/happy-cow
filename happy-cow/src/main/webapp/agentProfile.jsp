@@ -288,10 +288,10 @@
                 <div class="card-body p-4">
                     <h2 class="h6 mb-3 text-uppercase text-muted">Quick Actions</h2>
                     <div class="d-grid gap-2">
-                        <a href="${ctx}/agent/orders" class="btn btn-outline-success">
+                        <a href="${ctx}/agent/profile/orders" class="btn btn-outline-success">
                             <i class="fa-solid fa-list-check me-2"></i>View Orders
                         </a>
-                        <a href="${ctx}/agent/earnings" class="btn btn-outline-success">
+                        <a href="${ctx}/agent/profile/earnings" class="btn btn-outline-success">
                             <i class="fa-solid fa-wallet me-2"></i>Earnings
                         </a>
                         <a href="${ctx}/agent/routes" class="btn btn-outline-success">
