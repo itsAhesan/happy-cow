@@ -48,7 +48,7 @@
           </a>
         </li>
         <li class="nav-item">
-          <a class="nav-link" data-path="/agent/earnings" href="${ctx}/agent/earnings">
+          <a class="nav-link" data-path="/agent/earnings" href="${ctx}/agent/profile/earnings">
             <i class="fa-solid fa-wallet me-1"></i>Earnings
           </a>
         </li>

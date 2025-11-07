@@ -1,5 +1,6 @@
 package com.xworkz.happycow.service;
 
+import com.xworkz.happycow.dto.PaymentViewDTO;
 import com.xworkz.happycow.dto.PaymentWindowDTO;
 import com.xworkz.happycow.entity.AdminEntity;
 import com.xworkz.happycow.entity.AgentEntity;
@@ -11,15 +12,20 @@ import com.xworkz.happycow.repo.AdminRepo;
 import com.xworkz.happycow.repo.ProductCollectionRepo;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import javax.transaction.Transactional; // Jakarta if you use it, else manage in repo
+import javax.persistence.EntityManager;
+import javax.persistence.EntityManagerFactory;
+import javax.persistence.TypedQuery;
+// Jakarta if you use it, else manage in repo
+import org.springframework.transaction.annotation.Transactional;
+
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
@@ -121,7 +127,84 @@ public class PaymentServiceImpl implements PaymentService {
         return paymentRepo.findByAgentAsDto(agentId);
     }
 
+    @Autowired
+    private EntityManagerFactory emf;
 
+    @Transactional(readOnly = true)
+    public List<PaymentViewDTO> findPaymentsByAgentId(Integer agentId) {
+        EntityManager em = emf.createEntityManager();
+        try {
+            String q = "SELECT p FROM AgentPaymentWindowEntity p WHERE p.agent.agentId = :aid ORDER BY p.windowStartDate DESC";
+            TypedQuery<AgentPaymentWindowEntity> tq = em.createQuery(q, AgentPaymentWindowEntity.class);
+            tq.setParameter("aid", agentId);
+            List<AgentPaymentWindowEntity> results = tq.getResultList();
+
+            List<PaymentViewDTO> dtos = new ArrayList<>(results.size());
+            for (AgentPaymentWindowEntity p : results) {
+                PaymentViewDTO dto = mapToDto(p);
+                dtos.add(dto);
+            }
+            return dtos;
+        } finally {
+            em.close();
+        }
+    }
+
+    /**
+     * Returns a single PaymentViewDTO for a paymentId and agentId.
+     */
+    @Transactional(readOnly = true)
+    public Optional<PaymentViewDTO> findPaymentByIdAndAgentId(Long paymentId, Integer agentId) {
+        EntityManager em = emf.createEntityManager();
+        try {
+            String q = "SELECT p FROM AgentPaymentWindowEntity p WHERE p.paymentId = :pid AND p.agent.agentId = :aid";
+            TypedQuery<AgentPaymentWindowEntity> tq = em.createQuery(q, AgentPaymentWindowEntity.class);
+            tq.setParameter("pid", paymentId);
+            tq.setParameter("aid", agentId);
+            List<AgentPaymentWindowEntity> list = tq.getResultList();
+            log.info("list: " + list);
+            if (list.isEmpty()) return Optional.empty();
+            return Optional.of(mapToDto(list.get(0)));
+        } finally {
+            em.close();
+        }
+    }
+
+    /** Helper: map an entity to DTO while EM is open. */
+    private PaymentViewDTO mapToDto(AgentPaymentWindowEntity p) {
+        PaymentViewDTO dto = new PaymentViewDTO();
+        dto.setPaymentId(p.getPaymentId());
+        dto.setReferenceNo(p.getReferenceNo());
+        dto.setWindowStartDate(p.getWindowStartDate());
+        dto.setWindowEndDate(p.getWindowEndDate());
+        dto.setGrossAmount(p.getGrossAmount());
+        dto.setSettledAt(p.getSettledAt());
+        dto.setStatus(p.getStatus());
+
+        // safe to read agent fields here while EM is open
+        if (p.getAgent() != null) {
+
+            Integer agentId = p.getAgent().getAgentId();
+            dto.setAgentId(agentId == null ? null : agentId.intValue());
+            String fn = p.getAgent().getFirstName() == null ? "" : p.getAgent().getFirstName();
+            String ln = p.getAgent().getLastName() == null ? "" : p.getAgent().getLastName();
+            String name = (fn + " " + ln).trim();
+            dto.setAgentName(name.isEmpty() ? null : name);
+        }
+        return dto;
+    }
+
+    /*@Override
+    public List<AgentPaymentWindowEntity> findPaymentsByAgentId(Integer agentId) {
+        List<AgentPaymentWindowEntity> findByAgentID = paymentRepo.findPaymentsByAgentId(agentId);
+        return findByAgentID;
+    }
+
+    @Override
+    public List<AgentPaymentWindowEntity> findPaymentByIdAndAgentId(Long paymentId, Integer agentId) {
+        List<AgentPaymentWindowEntity> findByPaymentIdAndAgentId = paymentRepo.findByPaymentIdAndAgentId(paymentId, agentId);
+        return findByPaymentIdAndAgentId;
+    }*/
 
 
 }

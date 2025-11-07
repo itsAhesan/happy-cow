@@ -234,7 +234,7 @@
                         <a href="${ctx}/agent/profile/orders" class="btn btn-outline-success">
                             <i class="fa-solid fa-list-check me-2"></i>View Orders
                         </a>
-                        <a href="${ctx}/agent/earnings" class="btn btn-outline-success">
+                        <a href="${ctx}/agent/profile/earnings" class="btn btn-outline-success">
                             <i class="fa-solid fa-wallet me-2"></i>Earnings
                         </a>
                         <a href="${ctx}/agent/routes" class="btn btn-outline-success">
