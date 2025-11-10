@@ -27,21 +27,9 @@
         .card:hover { transform: translateY(-5px); }
         .card-header { font-weight: bold; background-color: #f8f9fa; }
         .card-footer { background-color: #ffffff; }
-        /* Search bar styling */
-        .search-box input {
-            border-radius: 30px;
-            padding: 0.6rem 1rem;
-            border: 1px solid #ccc;
-            transition: 0.2s;
-        }
-        .search-box input:focus {
-            border-color: #2ea44f;
-            box-shadow: 0 0 6px rgba(46, 164, 79, 0.4);
-        }
-        .search-box button {
-            border-radius: 30px;
-            font-weight: 500;
-        }
+        .search-box input { border-radius: 30px; padding: 0.6rem 1rem; border: 1px solid #ccc; transition: 0.2s; }
+        .search-box input:focus { border-color: #2ea44f; box-shadow: 0 0 6px rgba(46, 164, 79, 0.4); }
+        .search-box button { border-radius: 30px; font-weight: 500; }
     </style>
 </head>
 <body>
@@ -94,13 +82,23 @@
 
         <!-- Main Content -->
         <div class="col-md-10 py-4">
+
+            <!-- Header with Import/Export buttons -->
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h2 class="fw-bold text-success mb-0">
                     <i class="fa-solid fa-cow me-2"></i> Products Dashboard
                 </h2>
-                <a href="registerProduct" class="btn btn-success">
-                    <i class="fa-solid fa-plus me-2"></i> Add New Product
-                </a>
+                <div class="d-flex gap-2">
+                    <a href="exportProducts" class="btn btn-outline-success">
+                        <i class="fa-solid fa-download me-2"></i> Export
+                    </a>
+                    <button class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#importModal">
+                        <i class="fa-solid fa-upload me-2"></i> Import
+                    </button>
+                    <a href="registerProduct" class="btn btn-success">
+                        <i class="fa-solid fa-plus me-2"></i> Add New Product
+                    </a>
+                </div>
             </div>
 
             <!-- Search Bar -->
@@ -129,11 +127,22 @@
                 </div>
             </div>
 
+            <!-- Alerts -->
             <c:if test="${not empty successMessage}">
                 <div class="alert alert-success">${successMessage}</div>
             </c:if>
             <c:if test="${not empty errorMessage}">
                 <div class="alert alert-danger">${errorMessage}</div>
+            </c:if>
+            <c:if test="${not empty importSummary}">
+                <div class="alert alert-info">
+                    <strong>Import Summary:</strong>
+                    <ul class="mb-0">
+                        <c:forEach var="s" items="${importSummary}">
+                            <li>${s}</li>
+                        </c:forEach>
+                    </ul>
+                </div>
             </c:if>
 
             <!-- Product Cards -->
@@ -145,27 +154,25 @@
                                 <i class="fa-solid fa-box me-1"></i>
                                 ${product.productName}
                             </div>
-                          <div class="card-body">
-                              <p><strong>ID:</strong> ${product.productId}</p>
-                              <p><strong>Product Name:</strong> ${product.productName}</p>
-                              <p><strong>Product Price:</strong> ₹${product.productPrice}</p>
-
-                              <p>
-                                  <strong>Product Type:</strong>
-                                  <c:choose>
-                                      <c:when test="${product.productType == 'Buy'}">
-                                          <span class="badge bg-success"><i class="fa-solid fa-cart-arrow-down me-1"></i> Buy</span>
-                                      </c:when>
-                                      <c:when test="${product.productType == 'Sell'}">
-                                          <span class="badge bg-primary"><i class="fa-solid fa-store me-1"></i> Sell</span>
-                                      </c:when>
-                                      <c:otherwise>
-                                          <span class="badge bg-secondary">N/A</span>
-                                      </c:otherwise>
-                                  </c:choose>
-                              </p>
-                          </div>
-
+                            <div class="card-body">
+                                <p><strong>ID:</strong> ${product.productId}</p>
+                                <p><strong>Product Name:</strong> ${product.productName}</p>
+                                <p><strong>Product Price:</strong> ₹${product.productPrice}</p>
+                                <p>
+                                    <strong>Product Type:</strong>
+                                    <c:choose>
+                                        <c:when test="${product.productType == 'Buy'}">
+                                            <span class="badge bg-success"><i class="fa-solid fa-cart-arrow-down me-1"></i> Buy</span>
+                                        </c:when>
+                                        <c:when test="${product.productType == 'Sell'}">
+                                            <span class="badge bg-primary"><i class="fa-solid fa-store me-1"></i> Sell</span>
+                                        </c:when>
+                                        <c:otherwise>
+                                            <span class="badge bg-secondary">N/A</span>
+                                        </c:otherwise>
+                                    </c:choose>
+                                </p>
+                            </div>
                             <div class="card-footer d-flex justify-content-between">
                                 <a href="editProduct?id=${product.productId}" class="btn btn-sm btn-warning">
                                     <i class="fa-solid fa-pen-to-square"></i> Edit
@@ -188,60 +195,46 @@
                 </div>
             </c:if>
 
-            <!-- Total Records Info -->
+            <!-- Pagination -->
             <p class="text-center text-muted mt-3">
                 Showing ${(currentPage-1)*pageSize + 1} to
                 ${currentPage*pageSize > totalRecords ? totalRecords : currentPage*pageSize}
                 of ${totalRecords} products
             </p>
 
-            <!-- Pagination -->
             <c:if test="${totalPages > 1}">
                 <nav aria-label="Product pagination">
                     <ul class="pagination justify-content-center mt-2">
-
-                        <!-- First -->
                         <li class="page-item <c:if test='${currentPage == 1}'>disabled</c:if>'">
                             <a class="page-link" href="productDashboard?page=1&size=${pageSize}&search=${fn:escapeXml(param.search)}">
                                 <i class="fa-solid fa-angle-left"></i><i class="fa-solid fa-angle-left"></i>
                             </a>
                         </li>
-
-                        <!-- Prev -->
                         <li class="page-item <c:if test='${currentPage == 1}'>disabled</c:if>'">
                             <a class="page-link" href="productDashboard?page=${currentPage - 1}&size=${pageSize}&search=${fn:escapeXml(param.search)}">
                                 <i class="fa-solid fa-angle-left"></i> Prev
                             </a>
                         </li>
-
-                        <!-- Sliding Window -->
                         <c:set var="startPage" value="${currentPage - 2}" />
                         <c:set var="endPage" value="${currentPage + 2}" />
                         <c:if test="${startPage < 1}"><c:set var="startPage" value="1"/></c:if>
                         <c:if test="${endPage > totalPages}"><c:set var="endPage" value="${totalPages}"/></c:if>
-
                         <c:if test="${startPage > 1}">
                             <li class="page-item disabled"><span class="page-link">…</span></li>
                         </c:if>
-
                         <c:forEach var="i" begin="${startPage}" end="${endPage}">
                             <li class="page-item <c:if test='${i == currentPage}'>active</c:if>'">
                                 <a class="page-link" href="productDashboard?page=${i}&size=${pageSize}&search=${fn:escapeXml(param.search)}">${i}</a>
                             </li>
                         </c:forEach>
-
                         <c:if test="${endPage < totalPages}">
                             <li class="page-item disabled"><span class="page-link">…</span></li>
                         </c:if>
-
-                        <!-- Next -->
                         <li class="page-item <c:if test='${currentPage == totalPages}'>disabled</c:if>'">
                             <a class="page-link" href="productDashboard?page=${currentPage + 1}&size=${pageSize}&search=${fn:escapeXml(param.search)}">
                                 Next <i class="fa-solid fa-angle-right"></i>
                             </a>
                         </li>
-
-                        <!-- Last -->
                         <li class="page-item <c:if test='${currentPage == totalPages}'>disabled</c:if>'">
                             <a class="page-link" href="productDashboard?page=${totalPages}&size=${pageSize}&search=${fn:escapeXml(param.search)}">
                                 <i class="fa-solid fa-angle-right"></i><i class="fa-solid fa-angle-right"></i>
@@ -250,9 +243,34 @@
                     </ul>
                 </nav>
             </c:if>
-
         </div>
     </div>
+</div>
+
+<!-- Import Modal -->
+<div class="modal fade" id="importModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <form action="importProducts" method="post" enctype="multipart/form-data" class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title"><i class="fa-solid fa-file-excel me-2"></i> Import Products (Excel)</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div class="mb-3">
+          <label for="excelFile" class="form-label">Choose Excel file (.xls or .xlsx)</label>
+          <input class="form-control" type="file" id="excelFile" name="file" accept=".xlsx,.xls" required>
+          <div class="form-text">Expected columns: Product Name, Product Price, Product Type (Buy/Sell)</div>
+        </div>
+        <div class="alert alert-warning small">
+          Rows with missing/invalid data will be skipped and a summary displayed after import.
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="submit" class="btn btn-primary">Upload & Import</button>
+      </div>
+    </form>
+  </div>
 </div>
 
 <!-- Delete Modal -->

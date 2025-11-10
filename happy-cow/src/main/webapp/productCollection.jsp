@@ -30,7 +30,7 @@
 
 <!-- Navbar -->
 <nav class="navbar navbar-expand-lg navbar-custom px-3">
-    <a class="navbar-brand" href="#">HappyCow Dairy</a>
+    <a class="navbar-brand" href="adminDashboard">HappyCow Dairy</a>
     <div class="mx-auto search-box">
         <input type="text" class="form-control form-control-sm" placeholder="Search...">
     </div>

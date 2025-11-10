@@ -13,9 +13,14 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
+import java.io.IOException;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 @Controller
@@ -27,16 +32,7 @@ public class ProductController {
 
 
 
-/*    @GetMapping("productDashboard")
-    public String productDashboard(HttpSession session) {
-        log.info("productDashboard is working");
 
-        AdminDTO loggedInAdmin = (AdminDTO) session.getAttribute("loggedInAdmin");
-        if (loggedInAdmin == null) {
-            return "redirect:/adminLogin";
-        }
-        return "productDashboard";
-    }*/
 
     @GetMapping("productDashboard")
     public String productDashboard(HttpSession session, Model model,
@@ -154,17 +150,56 @@ public class ProductController {
          return "registerProduct"; // JSP page name
     }
 
-  /*  @GetMapping("registerProduct")
-    public String registerProduct(HttpSession session) {
-        log.info("registerProduct is working");
+
+
+    // EXPORT - streams an Excel file containing all products
+    @GetMapping("exportProducts")
+    public void exportProducts(HttpSession session, HttpServletResponse response) throws IOException {
+        AdminDTO loggedInAdmin = (AdminDTO) session.getAttribute("loggedInAdmin");
+        if (loggedInAdmin == null) {
+            // if not logged, redirecting via response
+            response.sendRedirect("adminLogin");
+            return;
+        }
+
+        String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss"));
+        String filename = "HappyCow_Products_" + timestamp + ".xlsx";
+
+        response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+        response.setHeader("Content-Disposition", "attachment; filename=\"" + filename + "\"");
+
+        // productService will write workbook to the output stream
+        productService.exportAllProducts(response.getOutputStream());
+        response.getOutputStream().flush();
+    }
+
+    // IMPORT - accepts uploaded Excel, returns to dashboard with a summary
+    @PostMapping("importProducts")
+    public String importProducts(@RequestParam("file") MultipartFile file,
+                                 RedirectAttributes redirectAttributes,
+                                 HttpSession session) {
 
         AdminDTO loggedInAdmin = (AdminDTO) session.getAttribute("loggedInAdmin");
         if (loggedInAdmin == null) {
             return "redirect:/adminLogin";
         }
-        return "registerProduct";
-    }*/
 
+        if (file == null || file.isEmpty()) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Please choose an Excel file to upload.");
+            return "redirect:/productDashboard";
+        }
+
+        try {
+            List<String> summary = productService.importFromExcel(file, loggedInAdmin.getAdminName());
+            redirectAttributes.addFlashAttribute("successMessage", "Import finished.");
+            redirectAttributes.addFlashAttribute("importSummary", summary);
+        } catch (Exception e) {
+            log.error("Import failed", e);
+            redirectAttributes.addFlashAttribute("errorMessage", "Import failed: " + e.getMessage());
+        }
+
+        return "redirect:/productDashboard";
+    }
 
 
 
