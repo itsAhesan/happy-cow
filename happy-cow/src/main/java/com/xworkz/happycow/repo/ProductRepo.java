@@ -25,4 +25,8 @@ public interface ProductRepo {
     ProductEntity findByProductName(String productName);
 
     List<ProductEntity> getAllProductsByTypesOfMilk();
+
+    void saveAll(List<ProductEntity> entitiesToSave);
+
+    List<ProductEntity> findAllActiveProducts();
 }

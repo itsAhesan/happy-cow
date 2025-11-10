@@ -33,6 +33,7 @@
     .sidebar a:hover, .sidebar a.active { background:#e9ecef; font-weight:700; }
     .main-content { padding:2rem; }
     .navbar-custom { background:#fff; border-bottom:1px solid #ddd; }
+    .navbar-custom .navbar-brand { font-weight: bold; color: #2ea44f; }
     .muted-small { font-size:.85rem; color:#6c757d; }
     .stat { font-size:1.35rem; font-weight:700; }
     .table-small th, .table-small td { padding:.55rem .75rem; }
@@ -43,9 +44,14 @@
 </head>
 <body>
 
+
+
+
 <!-- Navbar -->
 <nav class="navbar navbar-expand-lg navbar-custom px-3">
   <a class="navbar-brand" href="<%=ctx%>/adminDashboard">HappyCow Dairy</a>
+
+
 
   <div class="mx-auto" style="max-width:480px;">
     <input class="form-control form-control-sm" placeholder="Search..."/>

@@ -272,4 +272,65 @@ public class ProductRepoImpl implements ProductRepo {
         }
 
     }
+
+    @Override
+    public List<ProductEntity> findAllActiveProducts() {
+        EntityManager em = null;
+        try {
+            em = emf.createEntityManager();
+            String query = "SELECT p FROM ProductEntity p WHERE p.active = true";
+            return em.createQuery(query, ProductEntity.class).getResultList();
+        } catch (Exception e) {
+            log.error("Failed to fetch all active products for export", e);
+            return Collections.emptyList();
+        } finally {
+            if (em != null) {
+                em.close();
+            }
+        }
+    }
+
+  @Override
+  public void saveAll(List<ProductEntity> products) {
+    if (products == null || products.isEmpty()) {
+      log.warn("No products provided for bulk save");
+      return;
+    }
+
+    EntityManager em = null;
+    EntityTransaction et = null;
+    try {
+      em = emf.createEntityManager();
+      et = em.getTransaction();
+      et.begin();
+
+      int batchSize = 50; // optimize for performance
+      int count = 0;
+      for (ProductEntity product : products) {
+        if (product.getProductId() == null) {
+          em.persist(product);
+        } else {
+          em.merge(product);
+        }
+        count++;
+        if (count % batchSize == 0) {
+          em.flush();
+          em.clear();
+        }
+      }
+
+      et.commit();
+      log.info("Bulk saved {} products successfully.", products.size());
+    } catch (Exception e) {
+      if (et != null && et.isActive()) {
+        et.rollback();
+      }
+      log.error("Failed to bulk save products", e);
+    } finally {
+      if (em != null) {
+        em.close();
+      }
+    }
+}
+
 }
