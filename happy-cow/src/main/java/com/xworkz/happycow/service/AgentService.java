@@ -59,6 +59,8 @@ public interface AgentService {
 
     void saveOrUpdateBankDetails(BankForm form);
 
+    AgentEntity findByToken(String token);
+
     //AgentDTO findByEmail(String email);
 
 }

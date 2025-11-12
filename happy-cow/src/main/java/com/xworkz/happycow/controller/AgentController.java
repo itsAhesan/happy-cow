@@ -93,6 +93,16 @@ public class AgentController {
         return "editAgent";
     }
 
+    @GetMapping("/view/{token}")
+    public String viewAgentByToken(@PathVariable String token, Model model) {
+        AgentEntity agent = agentService.findByToken(token);
+        if (agent == null) {
+            return "agentNotFound"; // create JSP/Thymeleaf page
+        }
+        model.addAttribute("agent", agent);
+        return "agentProfile"; // render view showing name, phone, email, etc.
+    }
+
     // ✅ Update Agent
     @PostMapping("/update")
     public String updateAgent(@ModelAttribute AgentDTO agentDTO, RedirectAttributes redirectAttributes, HttpSession session) {
@@ -140,42 +150,7 @@ public class AgentController {
     }
 
 
-    /*@PostMapping("agentLogin/sendAgentOtp")
-    public Map<String, Object> sendAgentOtp(@RequestParam String email) {
-        boolean sent = agentService.sendOtp(email);
-        Map<String, Object> body = new HashMap<>();
-        body.put("sent", sent);
-        return body; // works on Java 8
-    }*/
 
-    /*@GetMapping("agentLogin/check-email")
-    @ResponseBody
-    public Map<String, Boolean> checkEmail(@RequestParam String email) {
-        boolean exists = agentService.existsByEmail(email);
-        // Use a concrete map for Java 8 compatibility
-        Map<String, Boolean> body = new HashMap<>();
-        body.put("exists", exists);
-        return body;
-    }
-
-    @PostMapping("agentLogin/sendAgentOtp")
-    @ResponseBody
-    public Map<String, Object> sendAgentOtp(@RequestParam String email) {
-        boolean sent = agentService.sendOtp(email);
-        Map<String, Object> body = new HashMap<>();
-        body.put("sent", sent);
-        return body;  // jQuery will get JSON: { "sent": true/false }
-    }*/
-
-   /* @PostMapping("agentLogin/verifyAgentOtp")
-    @ResponseBody
-    public Map<String, Object> verifyAgentOtp(@RequestParam String email,
-                                              @RequestParam String otp) {
-        boolean ok = agentService.verifyOtp(email, otp);
-        Map<String, Object> body = new HashMap<>();
-        body.put("verified", ok);
-        return body;  // JSON: { "verified": true/false }
-    }*/
 
     @GetMapping("agentLoginSuccess")
     public String agentLoginSuccess(HttpSession session,Model model) {

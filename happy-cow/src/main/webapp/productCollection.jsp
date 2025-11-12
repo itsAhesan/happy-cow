@@ -13,6 +13,9 @@
     <link rel="stylesheet"
           href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
 
+    <!-- jsQR for static image decoding (reliable for uploaded images) -->
+    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
+
     <style>
         body { font-family: Arial, sans-serif; }
         .sidebar { height: 100vh; background-color: #f8f9fa; border-right: 1px solid #ddd; padding-top: 1rem; }
@@ -24,6 +27,11 @@
         .search-box { max-width: 400px; width: 100%; }
         .form-help { font-size: 0.85rem; color: #6c757d; }
         .spinner-border.spinner-xs { width: 1rem; height: 1rem; border-width: .15em; }
+        /* scanner modal tweaks */
+        #qr-reader { width: 100%; min-height: 320px; background: #000; display:flex; align-items:center; justify-content:center; color:#fff; }
+        .qr-modal .modal-dialog { max-width: 820px; }
+        .file-scan-input { display: none; }
+        .camera-select { min-width: 200px; }
     </style>
 </head>
 <body>
@@ -121,7 +129,7 @@
                                 <div class="form-help">Auto-filled from logged-in admin</div>
                             </div>
 
-                            <!-- Phone Number (lookup trigger) -->
+                            <!-- Phone Number (lookup trigger + QR) -->
                             <div class="col-md-4">
                                 <label for="phoneNumber" class="form-label">Phone Number</label>
                                 <div class="input-group">
@@ -129,11 +137,16 @@
                                            value="${productCollection.phoneNumber}"
                                            pattern="^(?:\\+?91[-\\s]?|0)?[6-9]\\d{9}$"
                                            placeholder="e.g. 9876543210 or +91 98765 43210" required>
-                                    <button class="btn btn-outline-secondary" type="button" id="lookupBtn">
+                                    <button class="btn btn-outline-secondary" type="button" id="lookupBtn" title="Lookup by phone">
                                         <span class="default-text"><i class="fa-solid fa-magnifying-glass"></i></span>
                                         <span class="loading d-none">
                                             <span class="spinner-border spinner-xs" role="status" aria-hidden="true"></span>
                                         </span>
+                                    </button>
+
+                                    <!-- QR Scan button -->
+                                    <button class="btn btn-outline-primary" type="button" id="scanQrBtn" title="Scan Agent QR">
+                                        <i class="fa-solid fa-qrcode"></i>
                                     </button>
                                 </div>
                                 <div class="invalid-feedback">Enter a valid Indian mobile (10 digits; +91/0 allowed).</div>
@@ -145,7 +158,7 @@
                                 <label for="name" class="form-label">Agent Name</label>
                                 <input type="text" class="form-control" id="name" name="name"
                                        value="${productCollection.name}" readonly>
-                                <div class="form-help">Auto-filled from phone number. Not stored in entity.</div>
+                                <div class="form-help">Auto-filled from phone number or QR scan. Not stored in entity.</div>
                             </div>
 
                             <!-- Agent Email (DTO-only) -->
@@ -153,7 +166,7 @@
                                 <label for="email" class="form-label">Agent Email</label>
                                 <input type="email" class="form-control" id="email" name="email"
                                        value="${productCollection.email}" readonly>
-                                <div class="form-help">Auto-filled from phone number. Not stored in entity.</div>
+                                <div class="form-help">Auto-filled from phone number or QR scan. Not stored in entity.</div>
                             </div>
 
                             <!-- Type of Milk (from backend products) -->
@@ -199,7 +212,6 @@
                                 <div class="form-help">Auto-calculated as Price × Quantity</div>
                             </div>
 
-                            <!-- NOTE: collectedAt field removed from UI -->
                         </div>
 
                         <div class="mt-4 d-flex gap-2">
@@ -269,6 +281,36 @@
     </div>
 </div>
 
+<!-- Scanner Modal -->
+<div class="modal fade qr-modal" id="qrModal" tabindex="-1" aria-labelledby="qrModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header d-flex align-items-center gap-2">
+                <h5 class="modal-title">Scan Agent QR</h5>
+                <select id="cameraSelect" class="form-select camera-select ms-3" style="width:auto;">
+                    <option value="">Detecting cameras...</option>
+                </select>
+                <button type="button" class="btn-close ms-auto" data-bs-dismiss="modal" aria-label="Close" id="closeScannerBtn"></button>
+            </div>
+            <div class="modal-body">
+                <div id="qr-reader" class="w-100">Please allow camera access to scan QR.</div>
+
+                <!-- hidden canvas used for image decoding -->
+                <canvas id="qr-canvas" style="display:none;"></canvas>
+
+                <div class="mt-3 text-center">
+                    <small class="text-muted">If your camera isn't supported, upload a QR image instead.</small>
+                    <div class="mt-2">
+                        <input type="file" accept="image/*" id="qrFileInput" class="file-scan-input">
+                        <button class="btn btn-sm btn-outline-secondary" id="uploadQrBtn"><i class="fa-solid fa-image me-1"></i> Scan from image</button>
+                    </div>
+                </div>
+                <div id="qrStatus" class="mt-2"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- JS -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
@@ -279,9 +321,7 @@
         const phoneEl = document.getElementById('phoneNumber');
 
         form.addEventListener('submit', function (event) {
-            // normalize phone input before HTML5 validation runs
             phoneEl.value = normalizeIndianPhone(phoneEl.value);
-
             if (!form.checkValidity()) {
                 event.preventDefault();
                 event.stopPropagation();
@@ -294,7 +334,6 @@
     function normalizeIndianPhone(raw) {
         if (!raw) return '';
         const digits = raw.replace(/\D+/g, '');
-        // keep last 10 digits (handles +91 / 0 prefixes)
         return digits.length >= 10 ? digits.slice(-10) : digits;
     }
     function isValidIndianPhone(raw) {
@@ -321,12 +360,9 @@
     }
     typeEl && typeEl.addEventListener('change', setPriceFromType);
     qtyEl && qtyEl.addEventListener('input', calcTotal);
-    window.addEventListener('DOMContentLoaded', function () {
-        setPriceFromType();
-        calcTotal();
-    });
+    window.addEventListener('DOMContentLoaded', function () { setPriceFromType(); calcTotal(); });
 
-    // --- Agent lookup by phone number
+    // --- Agent lookup by phone number (existing code)
     (function agentLookupInit() {
         const phoneEl  = document.getElementById('phoneNumber');
         const nameEl   = document.getElementById('name');
@@ -378,7 +414,6 @@
                     const dto = await resp.json();
                     if (dto && dto.agentId) {
                         fillAgent(dto);
-                        // also reflect normalized phone in the input so submit matches server expectations
                         phoneEl.value = normalized;
                         setMsg('Agent found and filled.', 'success');
                     } else {
@@ -408,6 +443,357 @@
         window.addEventListener('DOMContentLoaded', function () {
             if (isValidIndianPhone(phoneEl.value)) lookup();
         });
+    })();
+
+    /**************************************************************************
+     * QR scanner integration: dynamically load html5-qrcode library on demand
+     * and use jsQR for image uploads.
+     **************************************************************************/
+    (function qrScannerInit() {
+        const scanBtn = document.getElementById('scanQrBtn');
+        const modalEl = document.getElementById('qrModal');
+        const qrStatus = document.getElementById('qrStatus');
+        const qrFileInput = document.getElementById('qrFileInput');
+        const uploadQrBtn = document.getElementById('uploadQrBtn');
+        const closeScannerBtn = document.getElementById('closeScannerBtn');
+        const cameraSelect = document.getElementById('cameraSelect');
+        const qrReaderDiv = document.getElementById('qr-reader');
+
+        // CDN URL - change to a local path if you host the file yourself
+        const HTML5_QR_LIB = 'https://unpkg.com/html5-qrcode@2.3.8/minified/html5-qrcode.min.js';
+
+        let html5Qr = null;
+        let currentCameraId = null;
+        let modal = new bootstrap.Modal(modalEl, {keyboard: true});
+        let libLoaded = false;
+        let libLoadPromise = null;
+
+        // helper: dynamically load a script once and return a Promise
+        function loadScriptOnce(url) {
+            if (libLoadPromise) return libLoadPromise;
+            libLoadPromise = new Promise((resolve, reject) => {
+                if (window.Html5Qrcode) {
+                    libLoaded = true;
+                    return resolve();
+                }
+                const s = document.createElement('script');
+                s.src = url;
+                s.async = true;
+                s.onload = () => {
+                    if (window.Html5Qrcode) {
+                        libLoaded = true;
+                        resolve();
+                    } else {
+                        reject(new Error('Html5Qrcode loaded but global not found'));
+                    }
+                };
+                s.onerror = (e) => {
+                    reject(new Error('Failed to load script: ' + url));
+                };
+                document.head.appendChild(s);
+            });
+            return libLoadPromise;
+        }
+
+        // show modal and start camera scanner
+        scanBtn && scanBtn.addEventListener('click', function () {
+            qrStatus.innerHTML = '<small class="text-muted">Detecting cameras...</small>';
+            modal.show();
+
+            // Ensure lib is loaded before trying to get cameras
+            loadScriptOnce(HTML5_QR_LIB)
+                .then(() => initCamerasAndStart())
+                .catch(err => {
+                    console.error('Failed to load html5-qrcode lib', err);
+                    qrStatus.innerHTML = '<div class="text-danger">Camera library failed to load. Use image upload or allow loading external scripts.</div>';
+                    cameraSelect.innerHTML = '<option value="">Camera access failed</option>';
+                });
+        });
+
+        // stop scanner when modal closed
+        modalEl.addEventListener('hidden.bs.modal', function () {
+            stopScanner();
+            cameraSelect.innerHTML = '<option value="">Detecting cameras...</option>';
+            qrStatus.innerHTML = '';
+            qrFileInput.value = '';
+        });
+
+        closeScannerBtn.addEventListener('click', function () {
+            modal.hide();
+        });
+
+        // upload-from-image button
+        uploadQrBtn.addEventListener('click', function () {
+            qrFileInput.click();
+        });
+
+        // file input -> scan image using jsQR routine
+        qrFileInput.addEventListener('change', function (e) {
+            const file = e.target.files && e.target.files[0];
+            if (!file) return;
+            qrStatus.innerHTML = '<small class="text-muted">Scanning uploaded image...</small>';
+
+            scanImageFile(file)
+                .then(decodedText => {
+                    if (decodedText) {
+                        handleScanSuccess(decodedText);
+                    } else {
+                        qrStatus.innerHTML = '<div class="text-danger">No QR code found in the image.</div>';
+                    }
+                })
+                .catch(err => {
+                    console.error('scanImageFile error', err);
+                    qrStatus.innerHTML = '<div class="text-danger">Failed to scan image: ' + (err.message || '') + '</div>';
+                })
+                .finally(() => { qrFileInput.value = ''; });
+        });
+
+        // camera select change
+        cameraSelect.addEventListener('change', function () {
+            const id = cameraSelect.value;
+            if (!id) return;
+            if (id === currentCameraId) return;
+            startScannerWithCamera(id);
+        });
+
+        // init cameras AND start scanner; called after library loaded
+        async function initCamerasAndStart() {
+            try {
+                if (!window.Html5Qrcode || !Html5Qrcode.getCameras) {
+                    throw new Error('Html5Qrcode library not available');
+                }
+                const devices = await Html5Qrcode.getCameras();
+                cameraSelect.innerHTML = '';
+                if (!devices || devices.length === 0) {
+                    cameraSelect.innerHTML = '<option value="">No camera found</option>';
+                    qrStatus.innerHTML = '<div class="text-danger">No camera detected. Use "Scan from image" instead.</div>';
+                    return;
+                }
+
+                devices.forEach((cam, idx) => {
+                    const opt = document.createElement('option');
+                    opt.value = cam.id;
+                    opt.text = cam.label || ('Camera ' + (idx + 1));
+                    cameraSelect.appendChild(opt);
+                });
+
+                let preferred = devices[0].id;
+                for (const d of devices) {
+                    if (/back|rear|environment|camera 1/i.test(d.label)) {
+                        preferred = d.id;
+                        break;
+                    }
+                }
+                cameraSelect.value = preferred;
+                startScannerWithCamera(preferred);
+            } catch (err) {
+                console.error('getCameras error', err);
+                cameraSelect.innerHTML = '<option value="">Camera access failed</option>';
+                qrStatus.innerHTML = '<div class="text-danger">Unable to access cameras. Give permission or use image upload.</div>';
+            }
+        }
+
+        function startScannerWithCamera(cameraId) {
+            stopScanner();
+            currentCameraId = cameraId;
+            qrStatus.innerHTML = '<small class="text-muted">Starting camera...</small>';
+
+            try {
+                html5Qr = new Html5Qrcode("qr-reader", { verbose: false });
+            } catch (e) {
+                console.error('Html5Qrcode constructor error', e);
+                qrStatus.innerHTML = '<div class="text-danger">Camera init failed.</div>';
+                return;
+            }
+
+            const config = { fps: 10, qrbox: { width: 280, height: 280 }, experimentalFeatures: { useBarCodeDetectorIfSupported: true } };
+
+            html5Qr.start(
+                cameraId,
+                config,
+                (decodedText, decodedResult) => {
+                    qrStatus.innerHTML = '<div class="text-success"><i class="fa-solid fa-circle-check me-1"></i> QR scanned</div>';
+                    stopScanner();
+                    handleScanSuccess(decodedText);
+                },
+                (errorMessage) => {
+                    // per-frame errors ignored
+                }
+            ).then(() => {
+                qrStatus.innerHTML = '<div class="text-success">Camera started. Point to a QR code.</div>';
+            }).catch(err => {
+                console.error('html5Qr.start error', err);
+                qrStatus.innerHTML = '<div class="text-danger">Camera start failed: ' + (err.message || err) + '</div>';
+            });
+        }
+
+        function stopScanner() {
+            if (html5Qr) {
+                try {
+                    html5Qr.stop().then(()=> html5Qr.clear()).catch(()=>{});
+                } catch (e) { /* ignore */ }
+                html5Qr = null;
+            }
+            currentCameraId = null;
+            const qrReader = document.getElementById('qr-reader');
+            if (qrReader) { qrReader.innerHTML = 'Please allow camera access to scan QR.'; }
+        }
+
+        /***************** helper functions (vCard parse, image scan, fill form) *****************/
+
+        // parse minimal vCard fields we need (FN, TEL, EMAIL)
+        function parseVCard(vcardText) {
+            const raw = vcardText.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+            const lines = raw.split('\n');
+            const result = {};
+            for (let i=0;i<lines.length;i++) {
+                let line = lines[i].trim();
+                if (!line) continue;
+                // unfold simple folded lines
+                while (i < lines.length - 1 && /^[ \t]/.test(lines[i+1])) {
+                    line += lines[i+1].trim();
+                    i++;
+                }
+                if (/^TEL/i.test(line)) {
+                    const parts = line.split(':');
+                    if (parts.length >= 2) result.tel = parts.slice(1).join(':').replace(/[^+\d]/g,'');
+                } else if (/^FN:/i.test(line)) {
+                    result.fn = line.substring(line.indexOf(':')+1).trim();
+                } else if (/^EMAIL/i.test(line)) {
+                    const parts = line.split(':');
+                    if (parts.length >= 2) result.email = parts.slice(1).join(':').trim();
+                } else if (/^N:/i.test(line) && !result.fn) {
+                    const val = line.substring(line.indexOf(':')+1).trim();
+                    const parts = val.split(';');
+                    const first = (parts[1] || '').trim();
+                    const last  = (parts[0] || '').trim();
+                    const fullname = (first + ' ' + last).trim();
+                    if (fullname) result.fn = fullname;
+                }
+            }
+            return result;
+        }
+
+        // handle result text (vCard parsing and filling fields)
+        function handleScanSuccess(text) {
+            const phoneEl  = document.getElementById('phoneNumber');
+            const nameEl   = document.getElementById('name');
+            const emailEl  = document.getElementById('email');
+            const agentIdEl = document.getElementById('agentId');
+            const lookupMsg = document.getElementById('lookupMsg');
+
+            // If it's a vCard
+            if (/BEGIN:VCARD/i.test(text)) {
+                const v = parseVCard(text);
+                if (v.tel) phoneEl.value = normalizeIndianPhone(v.tel);
+                if (v.fn) nameEl.value = v.fn;
+                if (v.email) emailEl.value = v.email;
+                agentIdEl.value = '';
+
+                // try server lookup by phone
+                if (phoneEl.value && /^[6-9]\d{9}$/.test(phoneEl.value)) {
+                    lookupByPhoneAfterScan(phoneEl.value);
+                } else {
+                    lookupMsg.className = 'form-help text-warning';
+                    lookupMsg.textContent = 'Scanned contact filled. If phone is invalid for this region, adjust manually.';
+                }
+                setTimeout(()=> modal.hide(), 700);
+                return;
+            }
+
+            // plain phone digits?
+            const onlyDigits = text.replace(/\D/g,'');
+            if (onlyDigits.length >= 10) {
+                const last10 = onlyDigits.slice(-10);
+                document.getElementById('phoneNumber').value = last10;
+                lookupByPhoneAfterScan(last10);
+                setTimeout(()=> modal.hide(), 500);
+                return;
+            }
+
+            // unknown content
+            qrStatus.innerHTML = '<div class="text-danger">Scanned QR content not recognized. Supported: vCard or phone number.</div>';
+        }
+
+        // call existing phone lookup endpoint after scan
+        function lookupByPhoneAfterScan(phone) {
+            const url = '<c:url value="/productCollection/getAgentByPhoneNumber"/>';
+            const phoneEl = document.getElementById('phoneNumber');
+            const nameEl = document.getElementById('name');
+            const emailEl = document.getElementById('email');
+            const agentIdEl = document.getElementById('agentId');
+            const lookupMsg = document.getElementById('lookupMsg');
+
+            fetch(url + '?phoneNumber=' + encodeURIComponent(phone), { headers: {'Accept':'application/json'} })
+                .then(resp => {
+                    if (resp.ok) return resp.json();
+                    if (resp.status === 404) throw new Error('notfound');
+                    throw new Error('lookup failed');
+                })
+                .then(dto => {
+                    if (dto && dto.agentId) {
+                        agentIdEl.value = dto.agentId;
+                        nameEl.value = (dto.firstName || '') + (dto.lastName ? (' ' + dto.lastName) : '');
+                        emailEl.value = dto.email || emailEl.value;
+                        lookupMsg.className = 'form-help text-success';
+                        lookupMsg.textContent = 'Agent found and filled from server.';
+                    } else {
+                        lookupMsg.className = 'form-help text-warning';
+                        lookupMsg.textContent = 'No agent record found for this phone. Filled contact only.';
+                    }
+                })
+                .catch(err => {
+                    if (err.message === 'notfound') {
+                        lookupMsg.className = 'form-help text-warning';
+                        lookupMsg.textContent = 'No agent record found for this phone. Filled contact only.';
+                    } else {
+                        lookupMsg.className = 'form-help text-danger';
+                        lookupMsg.textContent = 'Server lookup failed. Contact filled locally.';
+                    }
+                });
+        }
+
+        /**
+         * Read image file, draw to canvas, decode with jsQR.
+         * Returns Promise<string|null> resolved with decoded text or null if none.
+         */
+        function scanImageFile(file) {
+            return new Promise((resolve, reject) => {
+                if (!file.type.match(/^image\//)) {
+                    return reject(new Error('Selected file is not an image'));
+                }
+                const reader = new FileReader();
+                reader.onerror = () => reject(new Error('Failed to read file'));
+                reader.onload = () => {
+                    const img = new Image();
+                    img.onerror = () => reject(new Error('Invalid image file'));
+                    img.onload = () => {
+                        try {
+                            const canvas = document.getElementById('qr-canvas');
+                            const ctx = canvas.getContext('2d');
+                            // limit size to avoid memory issues
+                            const maxDim = 1200;
+                            let w = img.naturalWidth;
+                            let h = img.naturalHeight;
+                            const scale = Math.min(1, maxDim / Math.max(w, h));
+                            w = Math.floor(w * scale);
+                            h = Math.floor(h * scale);
+                            canvas.width = w;
+                            canvas.height = h;
+                            ctx.clearRect(0, 0, w, h);
+                            ctx.drawImage(img, 0, 0, w, h);
+                            const imageData = ctx.getImageData(0, 0, w, h);
+                            const code = jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: "attemptBoth" });
+                            if (code && code.data) resolve(code.data);
+                            else resolve(null);
+                        } catch (ex) { reject(ex); }
+                    };
+                    img.src = reader.result;
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+
     })();
 </script>
 
