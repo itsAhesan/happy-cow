@@ -59,4 +59,6 @@ public interface AgentRepo {
     AgentBankAuditEntity findByAgentIdFromAgentBankAudit(Integer agentId);
 
     void updateBankAudit(AgentBankAuditEntity bankAuditEntity);
+
+    AgentEntity findByToken(String token);
 }

@@ -9,18 +9,25 @@ import com.xworkz.happycow.entity.AgentBankEntity;
 import com.xworkz.happycow.entity.AgentEntity;
 import com.xworkz.happycow.repo.AgentAuditRepo;
 import com.xworkz.happycow.repo.AgentRepo;
+import com.xworkz.happycow.util.QrUtil;
+import com.xworkz.happycow.util.VCardUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.ByteArrayResource;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import javax.mail.internet.MimeMessage;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.*;
+
+
 
 @Service
 @Slf4j
@@ -103,7 +110,79 @@ public class AgentServiceImpl implements AgentService {
     private AgentAuditRepo agentAuditRepo;
 
 
+
+
+
     @Transactional
+    public void registerAgent(AgentDTO agentDto, String adminName) {
+
+        // 1) copy DTO -> entity
+        AgentEntity agentEntity = new AgentEntity();
+        BeanUtils.copyProperties(agentDto, agentEntity);
+
+        // 2) generate and set a profile token (recommended)
+        String token = UUID.randomUUID().toString();
+        agentEntity.setProfileToken(token);
+
+        // 3) Save agent (first save). Use repo.save which should persist new entity.
+        //    Ensure repo.save uses persist for null id, merge otherwise (see repo fix).
+        agentRepo.save(agentEntity);
+
+        // 4) audit log
+        AgentAuditEntity audit = new AgentAuditEntity();
+        audit.setAgent(agentEntity);
+        audit.setAgentName(agentDto.getFirstName() + " " + agentDto.getLastName());
+        audit.setCreatedBy(adminName);
+        audit.setUpdatedBy(adminName);
+        audit.setCreatedOn(LocalDateTime.now());
+        agentAuditRepo.save(audit);
+
+        // 5) Build vCard from the saved agentEntity (so token/ID present if you need it)
+        String vcard = VCardUtil.buildVCard(agentEntity);
+        // Optionally log the vcard for debugging (avoid PII in production logs)
+        log.debug("Generated vCard for agent {}: {}", agentEntity.getEmail(), vcard);
+
+        // 6) Generate QR bytes from vCard
+        byte[] qrBytes = null;
+        try {
+            qrBytes = QrUtil.generateQrCodePngBytes(vcard, 350, 350);
+            // store qr in entity and update DB (merge)
+            agentEntity.setQrCode(qrBytes);
+            agentRepo.save(agentEntity); // will perform merge for existing entity
+        } catch (Exception e) {
+            log.error("QR generation failed for {} : {}", agentEntity.getEmail(), e.getMessage(), e);
+        }
+
+        // 7) Send email (HTML with inline image + attachment fallback)
+        try {
+            MimeMessage mimeMessage = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true, "UTF-8");
+
+            helper.setTo(agentEntity.getEmail());
+            helper.setSubject("Welcome to HappyCow Dairy!");
+
+            String htmlBody = "<p>Dear " + (agentEntity.getFirstName()) + ",</p>"
+                    + "<p>Congratulations! Your registration as an agent with HappyCow Dairy was successful.</p>"
+                    + "<p>Scan the QR below to save your contact details:</p>"
+                    + (qrBytes != null ? "<img src='cid:agentQr' alt='Agent QR' style='max-width:300px;'/>" : "<p>(QR not available)</p>")
+                    + "<p>Best regards,<br/>HappyCow Dairy Team</p>";
+
+            helper.setText(htmlBody, true);
+
+            if (qrBytes != null) {
+                ByteArrayResource inline = new ByteArrayResource(qrBytes);
+                helper.addInline("agentQr", inline, "image/png");        // inline cid
+                helper.addAttachment("agent-qr.png", new ByteArrayResource(qrBytes)); // fallback
+            }
+
+            mailSender.send(mimeMessage);
+            log.info("Sent welcome email with QR to {}", agentEntity.getEmail());
+        } catch (Exception e) {
+            log.error("Failed to send email with QR to {} : {}", agentEntity.getEmail(), e.getMessage(), e);
+        }
+    }
+
+ /*   @Transactional
     public void registerAgent(AgentDTO agent, String adminName) {
 
         AgentEntity agentEntity = new AgentEntity();
@@ -137,8 +216,8 @@ public class AgentServiceImpl implements AgentService {
 
         mailSender.send(message);
 
-        //  emailService.sendEmail(savedAgent.getEmail(), subject, body);
-    }
+
+    }*/
 
     @Override
     public AgentDTO findById(Integer id) {
@@ -483,6 +562,11 @@ public class AgentServiceImpl implements AgentService {
         }
 
 
+    }
+
+    @Override
+    public AgentEntity findByToken(String token) {
+        return agentRepo.findByToken(token);
     }
 
 

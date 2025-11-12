@@ -64,4 +64,15 @@ public class AgentEntity {
     private String profilePictureContentType;
 
 
+
+
+
+    @Column(name = "profile_token", length = 64, unique = true)
+    private String profileToken;
+
+    @Column(name = "qr_code", columnDefinition = "LONGBLOB")
+    private byte[] qrCode;
+
+
+
 }

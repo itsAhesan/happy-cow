@@ -46,32 +46,31 @@ public class AgentRepoImpl implements AgentRepo {
 
     }
 
+    // AgentRepoImpl.java
     @Override
     public void save(AgentEntity agent) {
-
         EntityManager em = null;
         EntityTransaction et = null;
         try {
             em = emf.createEntityManager();
             et = em.getTransaction();
             et.begin();
-            em.persist(agent);
+            if (agent.getAgentId() == null) {
+                em.persist(agent);
+            } else {
+                em.merge(agent);
+            }
             et.commit();
-
         } catch (Exception e) {
             if (et != null && et.isActive()) {
                 et.rollback();
             }
             log.error("Failed to save AgentEntity: {}", agent, e);
-
         } finally {
-            if (em != null) {
-                em.close();
-            }
+            if (em != null) em.close();
         }
-
-
     }
+
 
     @Autowired
     private EntityManagerFactory emf;
@@ -639,6 +638,38 @@ public class AgentRepoImpl implements AgentRepo {
                 em.close();
             }
         }
+    }
+
+    @Override
+    public AgentEntity findByToken(String token) {
+
+        EntityManager em=null;
+        EntityTransaction et=null;
+        try {
+            String query="select a from AgentEntity a where a.token=:token and a.active=true";
+            em=emf.createEntityManager();
+            et=em.getTransaction();
+            et.begin();
+
+            em.merge(token);
+
+            et.commit();
+
+
+        } catch (Exception e) {
+            if (et != null && et.isActive()) {
+                et.rollback();
+            }
+
+
+
+        } finally {
+            if (em != null) {
+                em.close();
+            }
+        }
+
+        return null;
     }
 
 
