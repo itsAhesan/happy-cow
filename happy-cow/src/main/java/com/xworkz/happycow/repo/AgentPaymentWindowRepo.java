@@ -239,10 +239,60 @@ public class AgentPaymentWindowRepo {
   }
 
 
+  public Double getPendingPayments(Integer agentId) {
+    EntityManager em = null;
+    try {
+      em = emf.createEntityManager();
+      Number n = em.createQuery(
+                      "SELECT COALESCE(SUM(p.grossAmount), 0) " +
+                              "FROM AgentPaymentWindowEntity p " +
+                              "WHERE p.agent.agentId = :aid " +
+                              "AND p.status <> 'SUCCESS'",
+                      Number.class
+              ).setParameter("aid", agentId)
+              .getSingleResult();
+
+      return n != null ? n.doubleValue() : 0.0;
+    } finally {
+      if (em != null) em.close();
+    }
+  }
+
+  public Double getMonthlySettledPayments(Integer agentId) {
+    LocalDate now = LocalDate.now();
+    int year = now.getYear();
+    int month = now.getMonthValue();
+    EntityManager em = null;
+    try {
+      em = emf.createEntityManager();
+      Number n = em.createQuery(
+                      "SELECT COALESCE(SUM(p.grossAmount), 0) " +
+                              "FROM AgentPaymentWindowEntity p " +
+                              "WHERE p.agent.agentId = :aid " +
+                              "AND p.status = 'SUCCESS' " +
+                              "AND YEAR(p.windowEndDate) = :y " +
+                              "AND MONTH(p.windowEndDate) = :m",
+                      Number.class
+              ).setParameter("aid", agentId)
+              .setParameter("y", year)
+              .setParameter("m", month)
+              .getSingleResult();
+
+      return n != null ? n.doubleValue() : 0.0;
+    } finally {
+      if (em != null) em.close();
+    }
+  }
+
+  @Autowired
+  private ProductCollectionRepoImpl productCollectionRepoImpl;
+
+  public Double getUnsettledAmount(Integer agentId) {
+    Double totalCollected = productCollectionRepoImpl.sumTotalForAgent(agentId);
+    Double totalPaid = sumPaidForAgent(agentId);
+    return totalCollected - totalPaid;
 
 
 
-
-
-
+  }
 }

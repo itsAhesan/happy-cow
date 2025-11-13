@@ -5,6 +5,8 @@ import com.xworkz.happycow.dto.AgentDTO;
 import com.xworkz.happycow.dto.BankForm;
 import com.xworkz.happycow.entity.AgentBankEntity;
 import com.xworkz.happycow.entity.AgentEntity;
+import com.xworkz.happycow.repo.AgentPaymentWindowRepo;
+import com.xworkz.happycow.repo.ProductCollectionRepo;
 import com.xworkz.happycow.service.AgentService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -150,28 +152,66 @@ public class AgentController {
         return "agentLoginForm";  // JSP page name
     }
 
+    @Autowired
+    private ProductCollectionRepo productCollectionRepo;
 
-
+    @Autowired
+    private AgentPaymentWindowRepo agentPaymentWindowRepo ;
 
     @GetMapping("agentLoginSuccess")
-    public String agentLoginSuccess(HttpSession session, Model model, HttpServletResponse response) {
-      /*  response.setHeader("Cache-Control", "no-cache, no-store, must-revalidate"); // HTTP 1.1
-        response.setHeader("Pragma", "no-cache"); // HTTP 1.0
-        response.setDateHeader("Expires", 0);
-*/
+    public String agentLoginSuccess(
+            HttpSession session, Model model, HttpServletResponse response) {
+
         AgentDTO loggedInAgent = (AgentDTO) session.getAttribute("loggedInAgent");
         if (loggedInAgent == null) {
             return "redirect:/agentLogin";
         }
 
-      //  log.info("Agent logged in successfully: {}", loggedInAgent);
+        Integer agentId = loggedInAgent.getAgentId();
+
+        // 🔥 Get Quick Stats
+        Double todayLiters = productCollectionRepo.getTodayCollectionLiters(agentId);
+        Double todayEarnings = productCollectionRepo.getTodayEarnings(agentId);
+      //  Double pendingPayments = agentPaymentWindowRepo.getPendingPayments(agentId);
+        Double unsettledAmount = agentPaymentWindowRepo.getUnsettledAmount(agentId);
+        Double monthlySettledAmount = agentPaymentWindowRepo.getMonthlySettledPayments(agentId);
+
+        log.info("Today Liters: {}", todayLiters);
+        log.info("Today Earnings: {}", todayEarnings);
+        log.info("Unsettled Amount: {}", unsettledAmount);
+        log.info("Monthly Settled Amount: {}", monthlySettledAmount);
 
         model.addAttribute("agent", loggedInAgent);
+        model.addAttribute("todayCollectionLiters", todayLiters);
+        model.addAttribute("todayEarnings", todayEarnings);
+      //  model.addAttribute("pendingPayments", pendingPayments);
+        model.addAttribute("unsettledAmount", unsettledAmount);
+        model.addAttribute("monthlySettledPayments", monthlySettledAmount);
 
-
-
-        return "agentLoginSuccess";  // JSP page name
+        return "agentLoginSuccess";
     }
+
+
+
+      /*  @GetMapping("agentLoginSuccess")
+        public String agentLoginSuccess(HttpSession session, Model model, HttpServletResponse response) {
+          *//*  response.setHeader("Cache-Control", "no-cache, no-store, must-revalidate"); // HTTP 1.1
+            response.setHeader("Pragma", "no-cache"); // HTTP 1.0
+            response.setDateHeader("Expires", 0);
+    *//*
+            AgentDTO loggedInAgent = (AgentDTO) session.getAttribute("loggedInAgent");
+            if (loggedInAgent == null) {
+                return "redirect:/agentLogin";
+            }
+
+          //  log.info("Agent logged in successfully: {}", loggedInAgent);
+
+            model.addAttribute("agent", loggedInAgent);
+
+
+
+            return "agentLoginSuccess";  // JSP page name
+        }*/
 
     @GetMapping("agentLogout")
     public String agentLogout(HttpSession session,RedirectAttributes redirectAttributes) {

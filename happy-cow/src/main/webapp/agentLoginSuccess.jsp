@@ -1,6 +1,8 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" isELIgnored="false" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/functions" prefix="fn" %>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt" %>
+
 
 <!DOCTYPE html>
 <html lang="en">
@@ -37,6 +39,27 @@
         .kbd { padding:.15rem .4rem; border:1px solid #cbd5e1; border-bottom-width:2px; border-radius:.35rem; background:#f8fafc; font-family:ui-monospace,Menlo,Consolas,monospace; font-size:.85rem; }
         .shadow-soft { box-shadow:0 6px 18px rgba(0,0,0,.08); }
         .muted { color:#64748b; }
+        .stat {
+            background: white;
+            border-radius: 20px !important;
+            padding: 20px;
+            transition: 0.2s ease;
+        }
+        .stat:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+        }
+        .stat .value {
+            font-size: 1.7rem;
+            font-weight: 700;
+            color: #0f172a;
+        }
+        .stat .label {
+            font-size: 0.9rem;
+            color: #64748b;
+            margin-top: 6px;
+        }
+
     </style>
 </head>
 
@@ -155,40 +178,64 @@
         <!-- Right column: quick stats, actions, recent activity placeholders -->
         <div class="col-lg-7">
             <!-- Quick stats -->
-            <div class="row g-4 mb-4">
-                <div class="col-6 col-md-3">
-                    <div class="card stat text-center">
-                        <div class="card-body">
-                            <div class="value"><c:out value="${empty requestScope.totalDeliveries ? 0 : requestScope.totalDeliveries}"/></div>
-                            <div class="label">Deliveries</div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-6 col-md-3">
-                    <div class="card stat text-center">
-                        <div class="card-body">
-                            <div class="value"><c:out value="${empty requestScope.pendingOrders ? 0 : requestScope.pendingOrders}"/></div>
-                            <div class="label">Pending</div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-6 col-md-3">
-                    <div class="card stat text-center">
-                        <div class="card-body">
-                            <div class="value">₹<c:out value="${empty requestScope.monthEarnings ? '0' : requestScope.monthEarnings}"/></div>
-                            <div class="label">Earnings (Mo)</div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-6 col-md-3">
-                    <div class="card stat text-center">
-                        <div class="card-body">
-                            <div class="value"><c:out value="${empty requestScope.rating ? '—' : requestScope.rating}"/></div>
-                            <div class="label">Rating</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+         <!-- Quick Stats -->
+         <div class="row g-4 mb-4">
+
+             <!-- Milk Collected Today -->
+             <div class="col-6 col-md-3">
+                 <div class="card stat text-center shadow-soft p-3" style="border-radius: 20px;">
+                     <div class="card-body">
+                         <div class="value">
+                             <c:out value="${todayCollectionLiters}"/> L
+                         </div>
+                         <div class="label">Milk Collected Today</div>
+                     </div>
+                 </div>
+             </div>
+
+             <!-- Earnings Today -->
+             <div class="col-6 col-md-3">
+                 <div class="card stat text-center shadow-soft p-3" style="border-radius: 20px;">
+                     <div class="card-body">
+                         <div class="value">
+                             ₹<fmt:formatNumber value="${todayEarnings}" type="number"
+                                                minFractionDigits="0" maxFractionDigits="2" />
+                         </div>
+                         <div class="label">Earnings Today</div>
+                     </div>
+                 </div>
+             </div>
+
+             <!-- Unsettled Amount -->
+             <div class="col-6 col-md-3">
+                 <div class="card stat text-center shadow-soft p-3" style="border-radius: 20px;">
+                     <div class="card-body">
+                         <div class="value">
+                             ₹<fmt:formatNumber value="${unsettledAmount}" type="number"
+                                                minFractionDigits="0" maxFractionDigits="2" />
+                         </div>
+                         <div class="label">Unsettled Amount</div>
+                     </div>
+                 </div>
+             </div>
+
+             <!-- Payments Received (This Month) -->
+             <div class="col-6 col-md-3">
+                 <div class="card stat text-center shadow-soft p-3" style="border-radius: 20px;">
+                     <div class="card-body">
+                         <div class="value">
+                             ₹<fmt:formatNumber value="${monthlySettledPayments}" type="number"
+                                                minFractionDigits="0" maxFractionDigits="2" />
+                         </div>
+                         <div class="label">Payments Received (Mo)</div>
+                     </div>
+                 </div>
+             </div>
+
+         </div>
+
+
+
 
             <!-- Quick actions -->
             <div class="card mb-4">

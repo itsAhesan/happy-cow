@@ -34,4 +34,7 @@ public interface ProductCollectionRepo {
     Double sumQuantityForAgent(Integer agentId);
 
 
+    Double getTodayCollectionLiters(Integer agentId);
+
+    Double getTodayEarnings(Integer agentId);
 }

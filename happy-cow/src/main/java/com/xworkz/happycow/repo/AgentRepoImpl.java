@@ -471,7 +471,7 @@ public class AgentRepoImpl implements AgentRepo {
                     .getSingleResult();
 
         } catch (Exception e) {
-            log.error("Failed to find AgentBankEntity by agentId: {}", agentId, e);
+          //  log.error("Failed to find AgentBankEntity by agentId: {}", agentId, e);
             return null;
         } finally {
             if (em != null) em.close();

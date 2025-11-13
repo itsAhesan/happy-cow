@@ -5,6 +5,8 @@ import com.xworkz.happycow.dto.*;
 import com.xworkz.happycow.entity.AgentBankEntity;
 import com.xworkz.happycow.entity.AgentEntity;
 
+import com.xworkz.happycow.repo.AgentPaymentWindowRepo;
+import com.xworkz.happycow.repo.ProductCollectionRepo;
 import com.xworkz.happycow.service.AgentService;
 import com.xworkz.happycow.service.PaymentService;
 import com.xworkz.happycow.service.ProductCollectionService;
@@ -191,6 +193,12 @@ public class AgentProfileController {
     return masked.replaceAll("(.{4})(?=.)", "$1 ");
   }
 
+  @Autowired
+  private ProductCollectionRepo productCollectionRepo;
+
+  @Autowired
+  private AgentPaymentWindowRepo agentPaymentWindowRepo;
+
   @GetMapping("/dashboard")
   public String showDashboard(Model model, HttpSession session) {
     // 1) Ensure the user is logged in
@@ -215,6 +223,24 @@ public class AgentProfileController {
     } catch (Exception e) {
       agentForView = loggedInAgent; // fallback to session object
     }
+      Integer agentId = loggedInAgent.getAgentId();
+
+      // 🔥 Get Quick Stats
+      Double todayLiters = productCollectionRepo.getTodayCollectionLiters(agentId);
+      Double todayEarnings = productCollectionRepo.getTodayEarnings(agentId);
+      //  Double pendingPayments = agentPaymentWindowRepo.getPendingPayments(agentId);
+      Double unsettledAmount = agentPaymentWindowRepo.getUnsettledAmount(agentId);
+      Double monthlySettledAmount = agentPaymentWindowRepo.getMonthlySettledPayments(agentId);
+
+
+
+      model.addAttribute("todayCollectionLiters", todayLiters);
+      model.addAttribute("todayEarnings", todayEarnings);
+      //  model.addAttribute("pendingPayments", pendingPayments);
+      model.addAttribute("unsettledAmount", unsettledAmount);
+      model.addAttribute("monthlySettledPayments", monthlySettledAmount);
+
+
 
     // 3) Add the agent object expected by the JSP
     model.addAttribute("agent", agentForView);

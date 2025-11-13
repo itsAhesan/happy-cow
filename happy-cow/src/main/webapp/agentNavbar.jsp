@@ -65,7 +65,7 @@
       </ul>
 
       <!-- Center/Right: search -->
-      <form class="d-flex me-lg-3 my-2 my-lg-0" role="search" action="${ctx}/search" method="get">
+      <form class="d-flex me-lg-3 my-2 my-lg-0" role="search" action="#" method="get">
         <input class="form-control" name="q" type="search" placeholder="Search orders, routes, earnings…" aria-label="Search">
       </form>
 
