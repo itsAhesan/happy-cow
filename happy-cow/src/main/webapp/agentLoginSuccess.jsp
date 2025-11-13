@@ -75,40 +75,7 @@
         </ol>
     </nav>
 
-    <!-- Welcome / Success -->
-    <div class="hero p-4 p-md-5 mb-4">
-        <div class="d-flex align-items-start align-items-md-center flex-column flex-md-row gap-4">
-            <!-- Hero Avatar: image with initials fallback; avoid /photo/null -->
-            <div class="avatar">
-                <c:choose>
-                    <c:when test="${not empty agent.agentId}">
-                        <img id="heroPhoto"
-                             src="${ctx}/agent/profile/photo/${agent.agentId}"
-                             alt="Profile photo"
-                             onerror="this.classList.add('d-none'); document.getElementById('heroInitials').classList.remove('d-none');" />
-                        <div id="heroInitials" class="d-none">${initials}</div>
-                    </c:when>
-                    <c:otherwise>
-                        <div>${initials}</div>
-                    </c:otherwise>
-                </c:choose>
-            </div>
 
-            <div class="flex-grow-1">
-                <h1 class="h3 mb-1 text-success">
-                    <i class="fa-solid fa-circle-check me-2"></i>Login Successful
-                </h1>
-                <p class="mb-2 muted">Welcome back, <span class="fw-semibold">${fullName}</span> 👋</p>
-                <span class="pill"><i class="fa-solid fa-user-tie me-1"></i> Agent</span>
-                <span class="pill ms-2"><i class="fa-solid fa-shield-halved me-1"></i> Session active</span>
-            </div>
-            <div>
-                <a href="${ctx}/agentLogout" class="btn btn-outline-danger btn-lg">
-                    <i class="fa-solid fa-right-from-bracket me-2"></i>Logout
-                </a>
-            </div>
-        </div>
-    </div>
 
     <!-- Main content -->
     <div class="row g-4">
@@ -171,19 +138,16 @@
                             <a href="${ctx}/agent/profile/edit" class="btn btn-outline-success">
                                 <i class="fa-solid fa-pen-to-square me-2"></i>Edit Profile
                             </a>
-                            <a href="${ctx}/agent/security" class="btn btn-outline-success">
+                            <a href="#" class="btn btn-outline-success">
                                 <i class="fa-solid fa-shield-halved me-2"></i>Security Settings
                             </a>
-                            <a href="${ctx}/agent/password" class="btn btn-outline-success">
+                            <a href="#" class="btn btn-outline-success">
                                 <i class="fa-solid fa-key me-2"></i>Change Password
                             </a>
                         </div>
                     </div>
 
-                    <div class="alert alert-info mt-4 mb-0">
-                        <i class="fa-solid fa-lightbulb me-2"></i>
-                        Tip: Press <span class="kbd">Alt</span> + <span class="kbd">/</span> to quickly search actions.
-                    </div>
+
                 </div>
             </div>
         </div>
@@ -237,10 +201,10 @@
                         <a href="${ctx}/agent/profile/earnings" class="btn btn-outline-success">
                             <i class="fa-solid fa-wallet me-2"></i>Earnings
                         </a>
-                        <a href="${ctx}/agent/routes" class="btn btn-outline-success">
+                        <a href="#" class="btn btn-outline-success">
                             <i class="fa-solid fa-route me-2"></i>Delivery Routes
                         </a>
-                        <a href="${ctx}/agent/support" class="btn btn-outline-success">
+                        <a href="#" class="btn btn-outline-success">
                             <i class="fa-solid fa-headset me-2"></i>Support
                         </a>
                     </div>
@@ -281,7 +245,7 @@
             <div class="alert alert-warning mt-4 mb-0">
                 <i class="fa-solid fa-triangle-exclamation me-2"></i>
                 For your security, never share your OTP.
-                <a class="alert-link" href="${ctx}/agent/security">Review security tips</a>.
+
             </div>
         </div>
     </div>
@@ -291,7 +255,7 @@
         <a href="${ctx}/dashboard" class="btn btn-success btn-lg shadow-soft">
             <i class="fa-solid fa-gauge-high me-2"></i>Go to Main Dashboard
         </a>
-        <a href="${ctx}/agent/orders" class="btn btn-outline-success btn-lg ms-2">
+        <a href="#" class="btn btn-outline-success btn-lg ms-2">
             <i class="fa-solid fa-cart-flatbed me-2"></i>Manage Orders
         </a>
     </div>

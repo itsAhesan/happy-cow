@@ -36,30 +36,30 @@
       <div class="col-6 col-md-2">
         <div class="fw-semibold mb-2">Product</div>
         <ul class="list-unstyled text-muted">
-          <li><a class="text-reset text-decoration-none" href="${ctx}/milk">Milk Types</a></li>
-          <li><a class="text-reset text-decoration-none" href="${ctx}/pricing">Pricing</a></li>
-          <li><a class="text-reset text-decoration-none" href="${ctx}/delivery">Delivery</a></li>
-          <li><a class="text-reset text-decoration-none" href="${ctx}/faq">FAQs</a></li>
+          <li><a class="text-reset text-decoration-none" href="#">Milk Types</a></li>
+          <li><a class="text-reset text-decoration-none" href="#">Pricing</a></li>
+          <li><a class="text-reset text-decoration-none" href="#">Delivery</a></li>
+          <li><a class="text-reset text-decoration-none" href="#">FAQs</a></li>
         </ul>
       </div>
 
       <div class="col-6 col-md-2">
         <div class="fw-semibold mb-2">Company</div>
         <ul class="list-unstyled text-muted">
-          <li><a class="text-reset text-decoration-none" href="${ctx}/about">About</a></li>
-          <li><a class="text-reset text-decoration-none" href="${ctx}/careers">Careers</a></li>
-          <li><a class="text-reset text-decoration-none" href="${ctx}/news">News</a></li>
-          <li><a class="text-reset text-decoration-none" href="${ctx}/contact">Contact</a></li>
+          <li><a class="text-reset text-decoration-none" href="#">About</a></li>
+          <li><a class="text-reset text-decoration-none" href="#">Careers</a></li>
+          <li><a class="text-reset text-decoration-none" href="#">News</a></li>
+          <li><a class="text-reset text-decoration-none" href="#">Contact</a></li>
         </ul>
       </div>
 
       <div class="col-md-4">
         <div class="fw-semibold mb-2">Need help?</div>
-        <p class="text-muted mb-2"><i class="fa-solid fa-headset me-2"></i>Agent Support: <a class="text-decoration-none" href="${ctx}/agent/support">Open a ticket</a></p>
-        <p class="text-muted mb-2"><i class="fa-solid fa-envelope me-2"></i>Email: support@happycow.example</p>
+        <p class="text-muted mb-2"><i class="fa-solid fa-headset me-2"></i>Agent Support: <a class="text-decoration-none" href="#">Open a ticket</a></p>
+        <p class="text-muted mb-2"><i class="fa-solid fa-envelope me-2"></i>Email: ahesan@happycow.example</p>
         <p class="text-muted mb-3"><i class="fa-solid fa-phone me-2"></i>+91 90000 00000</p>
 
-        <form class="d-flex" action="${ctx}/subscribe" method="post">
+        <form class="d-flex" action="#" method="post">
           <input class="form-control me-2" type="email" name="email" placeholder="Subscribe for updates" required>
           <button class="btn btn-success" type="submit">Join</button>
         </form>
@@ -71,9 +71,9 @@
     <div class="container d-flex flex-column flex-md-row align-items-center justify-content-between">
       <small class="text-muted">&copy; <span id="year"></span> HappyCow Dairy. All rights reserved.</small>
       <div class="d-flex gap-3 mt-2 mt-md-0">
-        <a class="text-muted text-decoration-none" href="${ctx}/terms">Terms</a>
-        <a class="text-muted text-decoration-none" href="${ctx}/privacy">Privacy</a>
-        <a class="text-muted text-decoration-none" href="${ctx}/cookies">Cookies</a>
+        <a class="text-muted text-decoration-none" href="#">Terms</a>
+        <a class="text-muted text-decoration-none" href="#">Privacy</a>
+        <a class="text-muted text-decoration-none" href="#">Cookies</a>
       </div>
     </div>
   </div>

@@ -53,12 +53,12 @@
           </a>
         </li>
         <li class="nav-item">
-          <a class="nav-link" data-path="/agent/routes" href="${ctx}/agent/routes">
+          <a class="nav-link" data-path="/agent/routes" href="#">
             <i class="fa-solid fa-route me-1"></i>Routes
           </a>
         </li>
         <li class="nav-item">
-          <a class="nav-link" data-path="/agent/support" href="${ctx}/agent/support">
+          <a class="nav-link" data-path="/agent/support" href="#">
             <i class="fa-solid fa-headset me-1"></i>Support
           </a>
         </li>
@@ -104,8 +104,8 @@
               </li>
               <li><hr class="dropdown-divider"></li>
               <li><a class="dropdown-item" href="${ctx}/agent/profile"><i class="fa-solid fa-user me-2"></i>Profile</a></li>
-              <li><a class="dropdown-item" href="${ctx}/agent/security"><i class="fa-solid fa-shield-halved me-2"></i>Security</a></li>
-              <li><a class="dropdown-item" href="${ctx}/agent/settings"><i class="fa-solid fa-gear me-2"></i>Settings</a></li>
+              <li><a class="dropdown-item" href="#"><i class="fa-solid fa-shield-halved me-2"></i>Security</a></li>
+              <li><a class="dropdown-item" href="#"><i class="fa-solid fa-gear me-2"></i>Settings</a></li>
               <li><hr class="dropdown-divider"></li>
               <li><a class="dropdown-item text-danger" href="${ctx}/agentLogout"><i class="fa-solid fa-right-from-bracket me-2"></i>Logout</a></li>
             </ul>
