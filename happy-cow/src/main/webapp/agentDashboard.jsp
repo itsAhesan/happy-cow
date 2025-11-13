@@ -155,7 +155,9 @@
                         <div class="card shadow-sm h-100">
                             <div class="card-header text-primary">
                                 <i class="fa-solid fa-user-tie me-1"></i>
-                                ${agent.firstName} ${agent.lastName}
+                                <a href="agent/${agent.agentId}/product-collections">
+
+                                ${agent.firstName} ${agent.lastName} </a>
                             </div>
                             <div class="card-body">
                                 <p><strong>ID:</strong> ${agent.agentId}</p>

@@ -87,6 +87,47 @@ public class ProductCollectionRepoImpl implements ProductCollectionRepo {
         }
     }
 
+    @Override
+    public Double getTodayCollectionLiters(Integer agentId) {
+        EntityManager em = null;
+        try {
+            em = emf.createEntityManager();
+            Number n = em.createQuery(
+                            "SELECT COALESCE(SUM(p.quantity), 0) " +
+                                    "FROM ProductCollectionEntity p " +
+                                    "WHERE p.agent.agentId = :aid " +
+                                    "AND p.collectedAt = :d",
+                            Number.class
+                    ).setParameter("aid", agentId)
+                    .setParameter("d", LocalDate.now())
+                    .getSingleResult();
+
+            return n != null ? n.doubleValue() : 0.0;
+        } finally {
+            if (em != null) em.close();
+        }
+    }
+
+    @Override
+    public Double getTodayEarnings(Integer agentId) {
+        EntityManager em = null;
+        try {
+            em = emf.createEntityManager();
+            Number n = em.createQuery(
+                            "SELECT COALESCE(SUM(p.totalAmount), 0) " +
+                                    "FROM ProductCollectionEntity p " +
+                                    "WHERE p.agent.agentId = :aid " +
+                                    "AND p.collectedAt = :d",
+                            Number.class
+                    ).setParameter("aid", agentId)
+                    .setParameter("d", LocalDate.now())
+                    .getSingleResult();
+
+            return n != null ? n.doubleValue() : 0.0;
+        } finally {
+            if (em != null) em.close();
+        }
+    }
 
 
     @Override
@@ -249,80 +290,6 @@ public class ProductCollectionRepoImpl implements ProductCollectionRepo {
         }
     }
 
-  /*  public List<ProductCollectionEntity> findForAgentBetweenDates(Integer agentId, LocalDate startDate, LocalDate endDate) {
-        EntityManager em = null;
-        try {
-            em = emf.createEntityManager();
-            log.info("findForAgentBetweenDates agentId={}, startDate={}, endDate={}", agentId, startDate, endDate);
-
-           List<ProductCollectionEntity> resultList = em.createQuery(
-                            "SELECT p FROM ProductCollectionEntity p " +
-                                    "JOIN FETCH p.agent ag " +
-                                    "WHERE ag.agentId = :agentId " +
-                                    "AND p.collectedAt BETWEEN :startDate AND :endDate " +
-                                    "ORDER BY p.collectedAt DESC", ProductCollectionEntity.class)
-                    .setParameter("agentId", agentId)
-                    .setParameter("startDate", startDate)
-                    .setParameter("endDate", endDate)
-                    .getResultList();
-
-        *//*    List<ProductCollectionEntity> resultList = em.createQuery(
-                            "SELECT p FROM ProductCollectionEntity p " +
-                                    "JOIN FETCH p.agent ag " +
-                                    "WHERE ag.agentId = :agentId " +
-                                //    "AND p.collectedAt BETWEEN :startDate AND :endDate " +
-                                    "ORDER BY p.collectedAt DESC", ProductCollectionEntity.class)
-                    .setParameter("agentId", agentId)
-                //    .setParameter("startDate", startDate)
-                //    .setParameter("endDate", endDate)
-                    .getResultList();*//*
-
-            log.info("resultList: {}", resultList);
-
-            log.info("resultList size: {}", (resultList != null ? resultList.size() : 0));
-            return resultList;
-        } finally {
-            if (em != null) em.close();
-        }
-    }*/
-
-
-/*
-
-    public List<ProductCollectionEntity> findForAgentBetweenDates(Integer agentId, LocalDate startDate, LocalDate endDate) {        //for notifications
-        EntityManager em = null;
-        try {
-            em = emf.createEntityManager();
-            List<ProductCollectionEntity> resultList = em.createQuery(
-                            "SELECT p FROM ProductCollectionEntity p " +
-                                    "JOIN FETCH p.agent ag " +
-                                    "WHERE ag.agentId = :agentId " +
-                                    "AND p.collectedAt BETWEEN :startDate AND :endDate " +
-                                    "ORDER BY p.collectedAt DESC", ProductCollectionEntity.class)
-                    .setParameter("agentId", agentId)
-                    .setParameter("startDate", startDate)
-                    .setParameter("endDate", endDate)
-                    .getResultList();
-
-            */
-/*List<ProductCollectionEntity> resultList = em.createQuery(
-                            "SELECT p FROM ProductCollectionEntity p " +
-                                    "JOIN FETCH p.agent ag " +
-                                    "WHERE ag.agentId = :agentId " +
-                                    "ORDER BY p.collectedAt DESC", ProductCollectionEntity.class)
-                    .setParameter("agentId", agentId)
-                    .getResultList();*//*
-
-
-            log.info("resultList: {}", resultList);
-            return resultList;
-
-
-        } finally { if (em != null) em.close(); }
-    }
-
-*/
-
 
     // In ProductCollectionRepoImpl
     @Override
@@ -358,18 +325,7 @@ public class ProductCollectionRepoImpl implements ProductCollectionRepo {
         public final Double sumTotalAmount;
         public final Long countRows;
 
-        /*public AgentPeriodAggregate(Integer agentId, String firstName, String lastName,
-                                    String email, String phoneNumber,
-                                    Double sumQuantity, Double sumTotalAmount, Long countRows) {
-            this.agentId = agentId;
-            this.firstName = firstName;
-            this.lastName = lastName;
-            this.email = email;
-            this.phoneNumber = phoneNumber;
-            this.sumQuantity = sumQuantity;
-            this.sumTotalAmount = sumTotalAmount;
-            this.countRows = countRows;
-        }*/
+
     }
 
 

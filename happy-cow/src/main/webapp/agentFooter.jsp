@@ -59,7 +59,7 @@
         <p class="text-muted mb-2"><i class="fa-solid fa-envelope me-2"></i>Email: ahesan@happycow.example</p>
         <p class="text-muted mb-3"><i class="fa-solid fa-phone me-2"></i>+91 90000 00000</p>
 
-        <form class="d-flex" action="#" method="post">
+        <form class="d-flex" action="#" >
           <input class="form-control me-2" type="email" name="email" placeholder="Subscribe for updates" required>
           <button class="btn btn-success" type="submit">Join</button>
         </form>
