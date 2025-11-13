@@ -13,6 +13,7 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import java.util.HashMap;
 import java.util.List;
@@ -153,8 +154,11 @@ public class AgentController {
 
 
     @GetMapping("agentLoginSuccess")
-    public String agentLoginSuccess(HttpSession session,Model model) {
-
+    public String agentLoginSuccess(HttpSession session, Model model, HttpServletResponse response) {
+      /*  response.setHeader("Cache-Control", "no-cache, no-store, must-revalidate"); // HTTP 1.1
+        response.setHeader("Pragma", "no-cache"); // HTTP 1.0
+        response.setDateHeader("Expires", 0);
+*/
         AgentDTO loggedInAgent = (AgentDTO) session.getAttribute("loggedInAgent");
         if (loggedInAgent == null) {
             return "redirect:/agentLogin";

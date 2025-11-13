@@ -136,7 +136,7 @@
                 <a href="${ctx}/agent/profile/edit" class="btn btn-success">
                     <i class="fa-solid fa-pen-to-square me-2"></i>Edit Profile
                 </a>
-                <a href="${ctx}/agent/password" class="btn btn-outline-success">
+                <a href="#" class="btn btn-outline-success">
                     <i class="fa-solid fa-key me-2"></i>Change Password
                 </a>
             </div>
@@ -294,13 +294,13 @@
                         <a href="${ctx}/agent/profile/earnings" class="btn btn-outline-success">
                             <i class="fa-solid fa-wallet me-2"></i>Earnings
                         </a>
-                        <a href="${ctx}/agent/routes" class="btn btn-outline-success">
+                        <a href="#" class="btn btn-outline-success">
                             <i class="fa-solid fa-route me-2"></i>Delivery Routes
                         </a>
-                        <a href="${ctx}/agent/support" class="btn btn-outline-success">
+                        <a href="#" class="btn btn-outline-success">
                             <i class="fa-solid fa-headset me-2"></i>Support
                         </a>
-                        <a href="${ctx}/agent/security" class="btn btn-outline-success">
+                        <a href="#" class="btn btn-outline-success">
                             <i class="fa-solid fa-shield-halved me-2"></i>Security Settings
                         </a>
                     </div>

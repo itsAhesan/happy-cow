@@ -2,6 +2,8 @@ package com.xworkz.happycow.config;
 
 import org.springframework.web.servlet.support.AbstractAnnotationConfigDispatcherServletInitializer;
 
+import javax.servlet.Filter;
+
 public class AppInitialize extends AbstractAnnotationConfigDispatcherServletInitializer {
     @Override
     protected Class<?>[] getRootConfigClasses() {
@@ -16,5 +18,10 @@ public class AppInitialize extends AbstractAnnotationConfigDispatcherServletInit
     @Override
     protected String[] getServletMappings() {
         return new String[]{"/"};
+    }
+
+    @Override
+    protected Filter[] getServletFilters() {
+        return new Filter[]{ new NoCacheFilter() };
     }
 }
