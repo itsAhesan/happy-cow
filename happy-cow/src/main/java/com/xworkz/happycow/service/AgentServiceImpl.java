@@ -358,7 +358,7 @@ public class AgentServiceImpl implements AgentService {
                     + "Your OTP for login is: " + otp + "\n"
                     + "It is valid for 5 minutes.\n\n"
                     + "— HappyCow Dairy");
-         //    mailSender.send(msg);
+             mailSender.send(msg);
             log.info("OTP sent to {}", email);
 
 

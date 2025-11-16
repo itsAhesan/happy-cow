@@ -10,6 +10,7 @@ import com.xworkz.happycow.repo.ProductCollectionRepo;
 import com.xworkz.happycow.service.AgentService;
 import com.xworkz.happycow.service.PaymentService;
 import com.xworkz.happycow.service.ProductCollectionService;
+import com.xworkz.happycow.util.InvoicePdfGenerator;
 import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,6 +28,7 @@ import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import javax.validation.Valid;
+
 
 import java.io.IOException;
 
@@ -432,7 +434,8 @@ public class AgentProfileController {
     PaymentViewDTO p = opt.get();
 
     try {
-      byte[] pdf = buildInvoicePdfFromDto(p, logged);
+     
+        byte[] pdf = InvoicePdfGenerator.generate(p, logged);
 
       String filename =
           "invoice_"
@@ -455,292 +458,6 @@ public class AgentProfileController {
   }
     @Autowired
     private ServletContext servletContext;
-
-
-
-    private byte[] buildInvoicePdfFromDto(PaymentViewDTO p, AgentDTO agent) throws IOException {
-        // Create document and page
-        try (org.apache.pdfbox.pdmodel.PDDocument doc = new org.apache.pdfbox.pdmodel.PDDocument();
-             java.io.ByteArrayOutputStream out = new java.io.ByteArrayOutputStream()) {
-
-            org.apache.pdfbox.pdmodel.PDPage page =
-                    new org.apache.pdfbox.pdmodel.PDPage(org.apache.pdfbox.pdmodel.common.PDRectangle.A4);
-            doc.addPage(page);
-
-            // load fonts (ensure these files exist under /fonts in classpath)
-            org.apache.pdfbox.pdmodel.font.PDType0Font font;
-            org.apache.pdfbox.pdmodel.font.PDType0Font fontBold;
-            try (java.io.InputStream r0 = getClass().getResourceAsStream("/fonts/NotoSans-Regular.ttf");
-                 java.io.InputStream r1 = getClass().getResourceAsStream("/fonts/NotoSans-Bold.ttf")) {
-                if (r0 == null || r1 == null) {
-                    throw new IOException("Required fonts not found under /fonts/ in classpath.");
-                }
-                font = org.apache.pdfbox.pdmodel.font.PDType0Font.load(doc, r0, true);
-                fontBold = org.apache.pdfbox.pdmodel.font.PDType0Font.load(doc, r1, true);
-            }
-
-            final float M = 50f; // page margin
-            final float PAGE_W = page.getMediaBox().getWidth();
-            final float PAGE_H = page.getMediaBox().getHeight();
-            final float CONTENT_W = PAGE_W - 2 * M;
-
-            try (org.apache.pdfbox.pdmodel.PDPageContentStream cs =
-                         new org.apache.pdfbox.pdmodel.PDPageContentStream(doc, page)) {
-
-                // top anchor
-                final float topY = PAGE_H - M;
-
-                // --- Draw logo (left) ---
-                float logoW = 72f, logoH = 72f;
-                boolean logoDrawn = false;
-                java.io.InputStream logoIs = getClass().getResourceAsStream("/images/happy-cow-logo.png");
-                if (logoIs == null) {
-                    ClassLoader cl = Thread.currentThread().getContextClassLoader();
-                    if (cl != null) logoIs = cl.getResourceAsStream("images/happy-cow-logo.png");
-                }
-                if (logoIs != null) {
-                    try (java.io.InputStream ls = logoIs; java.io.ByteArrayOutputStream baos = new java.io.ByteArrayOutputStream()) {
-                        byte[] buf = new byte[4096]; int r;
-                        while ((r = ls.read(buf)) != -1) baos.write(buf, 0, r);
-                        org.apache.pdfbox.pdmodel.graphics.image.PDImageXObject logoImg =
-                                org.apache.pdfbox.pdmodel.graphics.image.PDImageXObject.createFromByteArray(doc, baos.toByteArray(), "logo");
-                        cs.drawImage(logoImg, M, topY - logoH, logoW, logoH);
-                        logoDrawn = true;
-                    } catch (Exception ignored) { /* non-fatal */ }
-                }
-
-                // --- Company block (left, next to logo) ---
-                float companyX = M + (logoDrawn ? logoW + 12f : 0f);
-                float companyTopY = topY - 6f;
-                float companyBlockHeight = 40f; // reasonable estimate for three lines
-                float curY = companyTopY;
-
-                cs.beginText();
-                cs.setFont(fontBold, 18f);
-                cs.newLineAtOffset(companyX, curY);
-                cs.showText("HappyCow");
-                cs.endText();
-
-                curY -= 18f;
-                cs.beginText();
-                cs.setFont(font, 10f);
-                cs.newLineAtOffset(companyX, curY);
-                cs.showText("123 Milk Street, Bengaluru, India - 560001");
-                cs.endText();
-
-                curY -= 12f;
-                cs.beginText();
-                cs.setFont(font, 9f);
-                cs.newLineAtOffset(companyX, curY);
-                cs.showText("GSTIN: 29ABCDE1234F1Z5 | Phone: +91-9876543210");
-                cs.endText();
-
-                // header actual height is max(logoH, companyBlockHeight)
-                float headerHeight = Math.max(logoDrawn ? logoH : 0f, companyBlockHeight);
-
-                // --- Invoice title: place BELOW header (prevents overlap) ---
-                String title = "INVOICE";
-                float titleSize = 20f;
-                float titleW = stringWidth(fontBold, titleSize, title);
-                float titleX = M + (CONTENT_W - titleW) / 2f;
-                float titleY = topY - headerHeight - 14f; // 14px gap after header
-                cs.beginText();
-                cs.setFont(fontBold, titleSize);
-                cs.newLineAtOffset(titleX, titleY);
-                cs.showText(title);
-                cs.endText();
-
-                // --- Meta (right side) — start from top of header and cascade down ---
-                float rightX = M + CONTENT_W;
-                float metaStartY = topY - 6f;
-                float metaXWidth = 220f; // limit width for wrapping meta
-                String ref = "Invoice Ref: " + (p.getReferenceNo() == null ? "" : p.getReferenceNo());
-                java.util.List<String> refLines = wrapText(font, 9f, metaXWidth, ref);
-
-                float metaY = metaStartY;
-                for (String ln : refLines) {
-                    float lnW = stringWidth(font, 9f, ln);
-                    cs.beginText();
-                    cs.setFont(font, 9f);
-                    cs.newLineAtOffset(rightX - lnW, metaY);
-                    cs.showText(ln);
-                    cs.endText();
-                    metaY -= 11f;
-                }
-
-                String pid = "Payment ID: " + (p.getPaymentId() != null ? p.getPaymentId().toString() : "");
-                float pidW = stringWidth(font, 9f, pid);
-                cs.beginText();
-                cs.setFont(font, 9f);
-                cs.newLineAtOffset(rightX - pidW, metaY);
-                cs.showText(pid);
-                cs.endText();
-                metaY -= 11f;
-
-                String settled = "Settled at: " + (p.getSettledAt() != null ? p.getSettledAt().toString() : "—");
-                float settledW = stringWidth(font, 9f, settled);
-                cs.beginText();
-                cs.setFont(font, 9f);
-                cs.newLineAtOffset(rightX - settledW, metaY);
-                cs.showText(settled);
-                cs.endText();
-
-                // --- Horizontal separator ---
-                float sepY = topY - headerHeight - 40f;
-                cs.setStrokingColor(200, 200, 200);
-                cs.setLineWidth(0.9f);
-                cs.moveTo(M, sepY);
-                cs.lineTo(M + CONTENT_W, sepY);
-                cs.stroke();
-
-                // --- Billed to block (below separator) ---
-                float billedY = sepY - 18f;
-                cs.beginText();
-                cs.setFont(fontBold, 11f);
-                cs.newLineAtOffset(M, billedY);
-                cs.showText("Billed to:");
-                cs.endText();
-
-                billedY -= 14f;
-                String agentName = (agent.getFirstName() == null ? "" : agent.getFirstName())
-                        + (agent.getLastName() == null ? "" : " " + agent.getLastName());
-                cs.beginText();
-                cs.setFont(font, 10f);
-                cs.newLineAtOffset(M, billedY);
-                cs.showText(agentName.trim());
-                cs.endText();
-
-                billedY -= 12f;
-                cs.beginText();
-                cs.setFont(font, 9f);
-                cs.newLineAtOffset(M, billedY);
-                cs.showText(agent.getEmail() != null ? agent.getEmail() : "");
-                cs.endText();
-
-                // --- Table header and single row ---
-                float tableTop = sepY - 60f;
-                float tableX = M;
-                float tableW = CONTENT_W;
-                float amountRight = tableX + tableW - 12f;
-
-                // header background
-                cs.setNonStrokingColor(245, 245, 245);
-                cs.addRect(tableX, tableTop, tableW, 24f);
-                cs.fill();
-                cs.setNonStrokingColor(0, 0, 0);
-
-                // header labels
-                cs.beginText();
-                cs.setFont(fontBold, 10f);
-                cs.newLineAtOffset(tableX + 8f, tableTop + 7f);
-                cs.showText("Description");
-                cs.endText();
-
-                String amtLabel = "Amount";
-                float amtLabelW = stringWidth(fontBold, 10f, amtLabel);
-                cs.beginText();
-                cs.setFont(fontBold, 10f);
-                cs.newLineAtOffset(amountRight - amtLabelW, tableTop + 7f);
-                cs.showText(amtLabel);
-                cs.endText();
-
-                // row content (desc)
-                float rowY = tableTop - 28f;
-                String desc = "Payout for window "
-                        + (p.getWindowStartDate() != null ? p.getWindowStartDate().toString() : "")
-                        + " to "
-                        + (p.getWindowEndDate() != null ? p.getWindowEndDate().toString() : "");
-                java.util.List<String> descLines = wrapText(font, 9f, tableW - 160f, desc);
-                float curLnY = rowY + 10f;
-                for (String dl : descLines) {
-                    cs.beginText();
-                    cs.setFont(font, 9f);
-                    cs.newLineAtOffset(tableX + 8f, curLnY);
-                    cs.showText(dl);
-                    cs.endText();
-                    curLnY -= 12f;
-                }
-
-                // amount right-aligned
-                String amountText = java.text.NumberFormat.getCurrencyInstance(new java.util.Locale("en", "IN"))
-                        .format(p.getGrossAmount() != null ? p.getGrossAmount() : 0.0);
-                if (amountText.contains("₹")) amountText = amountText.replace("₹", "Rs.");
-                float amtW = stringWidth(font, 9f, amountText);
-                cs.beginText();
-                cs.setFont(font, 9f);
-                cs.newLineAtOffset(amountRight - amtW, rowY + 10f);
-                cs.showText(amountText);
-                cs.endText();
-
-                // totals
-                float totalsY = rowY - 36f;
-                cs.beginText();
-                cs.setFont(fontBold, 11f);
-                cs.newLineAtOffset(amountRight - 140f, totalsY);
-                cs.showText("Total:");
-                cs.endText();
-
-                String totalText = java.text.NumberFormat.getCurrencyInstance(new java.util.Locale("en", "IN"))
-                        .format(p.getGrossAmount() != null ? p.getGrossAmount() : 0.0);
-                if (totalText.contains("₹")) totalText = totalText.replace("₹", "Rs.");
-                float totalTextW = stringWidth(fontBold, 11f, totalText);
-                cs.beginText();
-                cs.setFont(fontBold, 11f);
-                cs.newLineAtOffset(amountRight - totalTextW, totalsY);
-                cs.showText(totalText);
-                cs.endText();
-
-                // footer notes
-                float footerY = totalsY - 72f;
-                cs.setNonStrokingColor(110, 110, 110);
-                cs.beginText();
-                cs.setFont(font, 8.5f);
-                cs.newLineAtOffset(M, footerY);
-                cs.showText("Payment will be processed to the bank account on record. This is a computer-generated invoice.");
-                cs.endText();
-
-                footerY -= 12f;
-                cs.beginText();
-                cs.setFont(font, 8.5f);
-                cs.newLineAtOffset(M, footerY);
-                cs.showText("If you have questions, contact payroll@happycow.example or call +91-9876543210.");
-                cs.endText();
-
-                cs.setNonStrokingColor(0, 0, 0);
-            } // content stream closed
-
-            doc.save(out);
-            return out.toByteArray();
-        } // document close
-    }
-
-    // helper: width for string
-    private float stringWidth(org.apache.pdfbox.pdmodel.font.PDFont font, float fontSize, String text) throws IOException {
-        if (text == null || text.isEmpty()) return 0f;
-        return font.getStringWidth(text) / 1000f * fontSize;
-    }
-
-    // simple greedy wrap
-    private java.util.List<String> wrapText(org.apache.pdfbox.pdmodel.font.PDFont font, float fontSize, float maxWidth, String text) throws IOException {
-        java.util.List<String> lines = new java.util.ArrayList<>();
-        if (text == null || text.trim().isEmpty()) return lines;
-        String[] words = text.split("\\s+");
-        StringBuilder cur = new StringBuilder();
-        for (String w : words) {
-            String cand = cur.length() == 0 ? w : cur + " " + w;
-            if (stringWidth(font, fontSize, cand) <= maxWidth) {
-                if (cur.length() == 0) cur.append(w);
-                else cur.append(" ").append(w);
-            } else {
-                if (cur.length() > 0) lines.add(cur.toString());
-                cur = new StringBuilder(w);
-            }
-        }
-        if (cur.length() > 0) lines.add(cur.toString());
-        return lines;
-    }
-
-
 
 
   }
