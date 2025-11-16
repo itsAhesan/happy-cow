@@ -7,6 +7,7 @@ import lombok.Setter;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Data
 public class PaymentViewDTO {
@@ -21,5 +22,7 @@ public class PaymentViewDTO {
     // Optional agent info
     private Integer agentId;
     private String agentName;
+
+    private List<OrderItemDTO> orders;
 
 }

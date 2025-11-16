@@ -1,5 +1,6 @@
 package com.xworkz.happycow.service;
 
+import com.xworkz.happycow.dto.OrderItemDTO;
 import com.xworkz.happycow.dto.PaymentViewDTO;
 import com.xworkz.happycow.dto.PaymentWindowDTO;
 import com.xworkz.happycow.entity.AdminEntity;
@@ -170,7 +171,6 @@ public class PaymentServiceImpl implements PaymentService {
         }
     }
 
-    /** Helper: map an entity to DTO while EM is open. */
     private PaymentViewDTO mapToDto(AgentPaymentWindowEntity p) {
         PaymentViewDTO dto = new PaymentViewDTO();
         dto.setPaymentId(p.getPaymentId());
@@ -191,8 +191,61 @@ public class PaymentServiceImpl implements PaymentService {
             String name = (fn + " " + ln).trim();
             dto.setAgentName(name.isEmpty() ? null : name);
         }
+
+        // --- NEW: attach orders for this payment window ---
+        try {
+            if (dto.getAgentId() != null && dto.getWindowStartDate() != null && dto.getWindowEndDate() != null) {
+                // productCollectionRepo.findForAgentBetweenDates exists in your impl
+                List<ProductCollectionEntity> cols = productCollectionRepo.findForAgentBetweenDates(
+                        dto.getAgentId(), dto.getWindowStartDate(), dto.getWindowEndDate());
+
+                List<OrderItemDTO> items = new ArrayList<>();
+                for (ProductCollectionEntity c : cols) {
+                    OrderItemDTO it = new OrderItemDTO();
+                    it.setProductCollectionId(c.getProductCollectionId());
+                    it.setProductName(c.getTypeOfMilk());
+                    it.setUnitPrice(c.getPrice());
+                    it.setQuantity(c.getQuantity());
+                    it.setLineTotal(c.getTotalAmount());
+                    it.setCollectedAt(c.getCollectedAt());
+                    items.add(it);
+                }
+                dto.setOrders(items);
+            } else {
+                dto.setOrders(Collections.emptyList());
+            }
+        } catch (Exception ex) {
+            log.error("Failed to attach orders to payment DTO paymentId={}", p.getPaymentId(), ex);
+            dto.setOrders(Collections.emptyList());
+        }
+
         return dto;
     }
+
+
+    /** Helper: map an entity to DTO while EM is open. */
+ /*   private PaymentViewDTO mapToDto(AgentPaymentWindowEntity p) {     //working
+        PaymentViewDTO dto = new PaymentViewDTO();
+        dto.setPaymentId(p.getPaymentId());
+        dto.setReferenceNo(p.getReferenceNo());
+        dto.setWindowStartDate(p.getWindowStartDate());
+        dto.setWindowEndDate(p.getWindowEndDate());
+        dto.setGrossAmount(p.getGrossAmount());
+        dto.setSettledAt(p.getSettledAt());
+        dto.setStatus(p.getStatus());
+
+        // safe to read agent fields here while EM is open
+        if (p.getAgent() != null) {
+
+            Integer agentId = p.getAgent().getAgentId();
+            dto.setAgentId(agentId == null ? null : agentId.intValue());
+            String fn = p.getAgent().getFirstName() == null ? "" : p.getAgent().getFirstName();
+            String ln = p.getAgent().getLastName() == null ? "" : p.getAgent().getLastName();
+            String name = (fn + " " + ln).trim();
+            dto.setAgentName(name.isEmpty() ? null : name);
+        }
+        return dto;
+    }*/
 
     /*@Override
     public List<AgentPaymentWindowEntity> findPaymentsByAgentId(Integer agentId) {
