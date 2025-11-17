@@ -15,7 +15,13 @@ import java.time.LocalDateTime;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@NamedQuery(name = "findAllAgents", query = "SELECT a FROM AgentEntity a WHERE a.active = true")
+//@NamedQuery(name = "findAllAgents", query = "SELECT a FROM AgentEntity a WHERE a.active = true")
+
+@NamedQuery(
+        name = "findAllAgents",
+        query = "SELECT a FROM AgentEntity a WHERE a.active = true ORDER BY a.firstName ASC"
+)
+
 @NamedQuery(name = "findByAgentEmail", query = "SELECT a FROM AgentEntity a WHERE a.email = :email")
 @NamedQuery(name = "findByAgentPhoneNumber", query = "SELECT a FROM AgentEntity a WHERE a.phoneNumber = :phoneNumber")
 public class AgentEntity {

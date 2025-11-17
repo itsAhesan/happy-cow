@@ -160,7 +160,7 @@
                                 ${agent.firstName} ${agent.lastName} </a>
                             </div>
                             <div class="card-body">
-                                <p><strong>ID:</strong> ${agent.agentId}</p>
+
                                 <p><strong>Email:</strong> ${agent.email}</p>
                                 <p><strong>Phone:</strong> ${agent.phoneNumber}</p>
                                 <p><strong>Address:</strong> ${agent.address}</p>
