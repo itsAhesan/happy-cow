@@ -155,7 +155,6 @@
                                 ${product.productName}
                             </div>
                             <div class="card-body">
-                                <p><strong>ID:</strong> ${product.productId}</p>
                                 <p><strong>Product Name:</strong> ${product.productName}</p>
                                 <p><strong>Product Price:</strong> ₹${product.productPrice}</p>
                                 <p>

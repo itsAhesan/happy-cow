@@ -446,8 +446,9 @@
     })();
 
     /**************************************************************************
-     * QR scanner integration: dynamically load html5-qrcode library on demand
-     * and use jsQR for image uploads.
+     * QR scanner integration: load html5-qrcode with fallbacks and
+     * use jsQR for image uploads. If html5-qrcode can't load, use a native
+     * getUserMedia + jsQR fallback for live camera scanning.
      **************************************************************************/
     (function qrScannerInit() {
         const scanBtn = document.getElementById('scanQrBtn');
@@ -459,61 +460,104 @@
         const cameraSelect = document.getElementById('cameraSelect');
         const qrReaderDiv = document.getElementById('qr-reader');
 
-        // CDN URL - change to a local path if you host the file yourself
-        const HTML5_QR_LIB = 'https://unpkg.com/html5-qrcode@2.3.8/minified/html5-qrcode.min.js';
 
-        let html5Qr = null;
-        let currentCameraId = null;
-        let modal = new bootstrap.Modal(modalEl, {keyboard: true});
-        let libLoaded = false;
+
+          const HTML5_QR_VERSION = '2.3.8'; // keep this in one place
+
+
+
+          const HTML5_QR_LIB_SOURCES = [
+            '<c:url value="/js/vendor/html5-qrcode.min.js"/>', // your working local file
+            'https://cdn.jsdelivr.net/npm/html5-qrcode@' + HTML5_QR_VERSION + '/html5-qrcode.min.js',
+            'https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/' + HTML5_QR_VERSION + '/html5-qrcode.min.js',
+            'https://unpkg.com/html5-qrcode' // fallback to UMD "latest"
+          ];
+
+
+
+
+
+
+
         let libLoadPromise = null;
 
-        // helper: dynamically load a script once and return a Promise
-        function loadScriptOnce(url) {
-            if (libLoadPromise) return libLoadPromise;
-            libLoadPromise = new Promise((resolve, reject) => {
-                if (window.Html5Qrcode) {
-                    libLoaded = true;
-                    return resolve();
-                }
+        function loadScript(url) {
+            return new Promise((resolve, reject) => {
                 const s = document.createElement('script');
                 s.src = url;
                 s.async = true;
-                s.onload = () => {
-                    if (window.Html5Qrcode) {
-                        libLoaded = true;
-                        resolve();
-                    } else {
-                        reject(new Error('Html5Qrcode loaded but global not found'));
-                    }
-                };
-                s.onerror = (e) => {
-                    reject(new Error('Failed to load script: ' + url));
-                };
+                s.crossOrigin = 'anonymous';
+                s.onload = resolve;
+                s.onerror = () => reject(new Error('Failed to load script: ' + url));
                 document.head.appendChild(s);
             });
+        }
+        async function ensureHtml5QrLoaded() {
+            if (window.Html5Qrcode) return;
+            if (libLoadPromise) return libLoadPromise;
+            libLoadPromise = (async () => {
+                let lastErr;
+            //    for (const url of HTML5_QR_LIB_CANDIDATES) {
+            for (const url of HTML5_QR_LIB_SOURCES) {
+
+                    try {
+                        await loadScript(url);
+                   //     if (window.Html5Qrcode) return;
+                   if (window.Html5Qrcode) return Promise.resolve();
+
+                        lastErr = new Error('Global Html5Qrcode not found after loading ' + url);
+                    } catch (e) {
+                        lastErr = e;
+                    }
+                }
+                throw lastErr || new Error('html5-qrcode failed to load from all sources');
+            })();
             return libLoadPromise;
         }
 
+        // state for html5-qrcode and native fallback
+        let html5Qr = null;
+        let currentCameraId = null;
+        let nativeStream = null;
+        let nativeRafId = null;
+        let usingNativeFallback = false;
+
+        let modal = new bootstrap.Modal(modalEl, {keyboard: true});
+
         // show modal and start camera scanner
         scanBtn && scanBtn.addEventListener('click', function () {
+            qrReaderDiv.innerHTML = 'Please allow camera access to scan QR.';
             qrStatus.innerHTML = '<small class="text-muted">Detecting cameras...</small>';
+            cameraSelect.disabled = false;
+            cameraSelect.innerHTML = '<option value="">Detecting cameras...</option>';
+
+            if (!window.isSecureContext && !/^localhost$|^127(\.0){3}$/.test(location.hostname)) {
+                // informative (not fatal) — browser will block camera on non-secure origins
+                qrStatus.innerHTML = '<div class="text-warning">Tip: Cameras require HTTPS or localhost.</div>';
+            }
+
             modal.show();
 
-            // Ensure lib is loaded before trying to get cameras
-            loadScriptOnce(HTML5_QR_LIB)
-                .then(() => initCamerasAndStart())
+            ensureHtml5QrLoaded()
+                .then(() => {
+                    usingNativeFallback = false;
+                    initCamerasAndStart();
+                })
                 .catch(err => {
-                    console.error('Failed to load html5-qrcode lib', err);
-                    qrStatus.innerHTML = '<div class="text-danger">Camera library failed to load. Use image upload or allow loading external scripts.</div>';
-                    cameraSelect.innerHTML = '<option value="">Camera access failed</option>';
+                    console.warn('html5-qrcode could not be loaded, falling back to native scanner', err);
+                    usingNativeFallback = true;
+                    cameraSelect.innerHTML = '<option value="">Default camera</option>';
+                    cameraSelect.disabled = true; // no device list with native fallback
+                    startNativeScanner();
                 });
         });
 
         // stop scanner when modal closed
         modalEl.addEventListener('hidden.bs.modal', function () {
             stopScanner();
+            stopNativeScanner();
             cameraSelect.innerHTML = '<option value="">Detecting cameras...</option>';
+            cameraSelect.disabled = false;
             qrStatus.innerHTML = '';
             qrFileInput.value = '';
         });
@@ -548,8 +592,9 @@
                 .finally(() => { qrFileInput.value = ''; });
         });
 
-        // camera select change
+        // camera select change (html5-qrcode path only)
         cameraSelect.addEventListener('change', function () {
+            if (usingNativeFallback) return;
             const id = cameraSelect.value;
             if (!id) return;
             if (id === currentCameraId) return;
@@ -606,7 +651,11 @@
                 return;
             }
 
-            const config = { fps: 10, qrbox: { width: 280, height: 280 }, experimentalFeatures: { useBarCodeDetectorIfSupported: true } };
+            const config = {
+                fps: 10,
+                qrbox: { width: 280, height: 280 },
+                experimentalFeatures: { useBarCodeDetectorIfSupported: true }
+            };
 
             html5Qr.start(
                 cameraId,
@@ -616,9 +665,7 @@
                     stopScanner();
                     handleScanSuccess(decodedText);
                 },
-                (errorMessage) => {
-                    // per-frame errors ignored
-                }
+                (/*errorMessage*/) => { /* per-frame errors ignored */ }
             ).then(() => {
                 qrStatus.innerHTML = '<div class="text-success">Camera started. Point to a QR code.</div>';
             }).catch(err => {
@@ -637,6 +684,56 @@
             currentCameraId = null;
             const qrReader = document.getElementById('qr-reader');
             if (qrReader) { qrReader.innerHTML = 'Please allow camera access to scan QR.'; }
+        }
+
+        // ---------- Native fallback (getUserMedia + jsQR) ----------
+        function startNativeScanner() {
+            stopNativeScanner();
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                qrStatus.innerHTML = '<div class="text-danger">Camera not supported in this browser.</div>';
+                return;
+            }
+            qrReaderDiv.innerHTML =
+              '<video id="qr-video" autoplay muted playsinline style="width:100%;max-height:420px;background:#000"></video>';
+            const video = document.getElementById('qr-video');
+
+            navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' } } })
+                .then(stream => {
+                    nativeStream = stream;
+                    video.srcObject = stream;
+                    qrStatus.innerHTML = '<div class="text-success">Camera started. Point to a QR code.</div>';
+                    tick();
+                })
+                .catch(err => {
+                    qrStatus.innerHTML = '<div class="text-danger">Camera start failed: ' + (err.message || err) + '</div>';
+                });
+
+            function tick() {
+                const canvas = document.getElementById('qr-canvas');
+                const ctx = canvas.getContext('2d');
+                if (!video || video.readyState !== video.HAVE_ENOUGH_DATA) {
+                    nativeRafId = requestAnimationFrame(tick);
+                    return;
+                }
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+                ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+                const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                const code = jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: 'attemptBoth' });
+                if (code && code.data) {
+                    stopNativeScanner();
+                    handleScanSuccess(code.data);
+                    setTimeout(() => modal.hide(), 300);
+                    return;
+                }
+                nativeRafId = requestAnimationFrame(tick);
+            }
+        }
+        function stopNativeScanner() {
+            if (nativeRafId) cancelAnimationFrame(nativeRafId);
+            nativeRafId = null;
+            if (nativeStream) nativeStream.getTracks().forEach(t => t.stop());
+            nativeStream = null;
         }
 
         /***************** helper functions (vCard parse, image scan, fill form) *****************/
