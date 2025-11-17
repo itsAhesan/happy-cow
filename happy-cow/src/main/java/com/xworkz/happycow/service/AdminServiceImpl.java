@@ -196,6 +196,9 @@ public class AdminServiceImpl implements AdminService {
         adminRepo.updateAdmin(admin);
     }
 
+    @Autowired
+    private EmailService emailService;
+
     @Override
     public void sendUnlockEmail(AdminEntity admin) {
         //  String unlockLink = baseUrl + "/admin/unlock?token=" + admin.getUnlockToken();
@@ -213,7 +216,8 @@ public class AdminServiceImpl implements AdminService {
         message.setSubject(subject);
         message.setText(body);
 
-        mailSender.send(message);
+       // mailSender.send(message);
+        emailService.sendUnlockEmail(message);
         log.info("Unlock email sent to {}", admin.getEmailId());
     }
 
@@ -255,7 +259,8 @@ public class AdminServiceImpl implements AdminService {
             message.setSubject(subject);
             message.setText(body);
 
-            mailSender.send(message);
+          //  mailSender.send(message);
+            emailService.sendAgentResetOtpAsync(message);
 
             log.info("OTP sent successfully to {}", email);
             return true;
