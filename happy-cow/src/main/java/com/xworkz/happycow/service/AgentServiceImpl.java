@@ -175,7 +175,8 @@ public class AgentServiceImpl implements AgentService {
                 helper.addAttachment("agent-qr.png", new ByteArrayResource(qrBytes)); // fallback
             }
 
-            mailSender.send(mimeMessage);
+         //   mailSender.send(mimeMessage);
+            emailService.sendAgentRegistrationEmail(mimeMessage);
             log.info("Sent welcome email with QR to {}", agentEntity.getEmail());
         } catch (Exception e) {
             log.error("Failed to send email with QR to {} : {}", agentEntity.getEmail(), e.getMessage(), e);
@@ -335,6 +336,9 @@ public class AgentServiceImpl implements AgentService {
         return agentDTO;
     }
 
+    @Autowired
+    private EmailService emailService;
+
     @Override
     public boolean sendOtp(String email) {
         AgentEntity agent = agentRepo.findByEmail(email);
@@ -358,7 +362,9 @@ public class AgentServiceImpl implements AgentService {
                     + "Your OTP for login is: " + otp + "\n"
                     + "It is valid for 5 minutes.\n\n"
                     + "— HappyCow Dairy");
-             mailSender.send(msg);
+           //  mailSender.send(msg);
+            // 🔥 This will run asynchronously (UI no longer waits for mail)
+            emailService.sendAgentLoginOtpAsync(msg);
             log.info("OTP sent to {}", email);
 
 
@@ -495,7 +501,8 @@ public class AgentServiceImpl implements AgentService {
           message.setSubject(subject);
           message.setText(body);
 
-          mailSender.send(message);
+        //  mailSender.send(message);
+          emailService.sendAgentBankDetailsSuccessEmail(message);
 
           log.info("Email sent successfully to {}", email);
 
