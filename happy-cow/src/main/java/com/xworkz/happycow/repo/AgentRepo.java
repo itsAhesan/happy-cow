@@ -61,4 +61,6 @@ public interface AgentRepo {
     void updateBankAudit(AgentBankAuditEntity bankAuditEntity);
 
     AgentEntity findByToken(String token);
+
+    long countByActiveTrue();
 }

@@ -4,6 +4,8 @@ import com.xworkz.happycow.dto.AdminDTO;
 import com.xworkz.happycow.dto.PendingPaymentNotification;
 import com.xworkz.happycow.entity.AdminEntity;
 import com.xworkz.happycow.repo.AdminRepo;
+import com.xworkz.happycow.repo.AgentRepo;
+import com.xworkz.happycow.repo.ProductRepo;
 import com.xworkz.happycow.service.AdminService;
 import com.xworkz.happycow.service.AuditService;
 import com.xworkz.happycow.service.NotificationPushService;
@@ -34,6 +36,10 @@ public class AdminController {
   @Autowired private NotificationPushService notificationPushService;
 
   @Autowired private NotificationService notificationService;
+
+  @Autowired private ProductRepo productRepo;
+
+  @Autowired private AgentRepo agentRepo;
 
   @GetMapping("adminLogin")
   public String adminLogin() {
@@ -147,6 +153,19 @@ public class AdminController {
     }
 
     model.addAttribute("loggedInAdmin", loggedInAdmin);
+
+      try {
+          long totalProducts = productRepo.countByActiveTrue();
+          long totalAgents = agentRepo.countByActiveTrue();
+          model.addAttribute("totalProducts", totalProducts);
+          model.addAttribute("totalAgents", totalAgents);
+      } catch (Exception e) {
+          log.warn("Failed to fetch counts for dashboard KPI; defaulting to 0", e);
+          model.addAttribute("totalProducts", 0);
+          model.addAttribute("totalAgents", 0);
+      }
+
+
     return "adminDashboard";
   }
 
