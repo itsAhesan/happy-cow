@@ -673,4 +673,28 @@ public class AgentRepoImpl implements AgentRepo {
     }
 
 
+    @Override
+    public long countByActiveTrue() {
+        EntityManager em=null;
+
+        try {
+            em=emf.createEntityManager();
+
+            TypedQuery<Long> q = em.createQuery(
+                    "SELECT COUNT(a) FROM AgentEntity a WHERE a.active = true", Long.class);
+            return q.getSingleResult();
+
+
+
+        } catch (Exception e) {
+            return 0;
+        } finally {
+            if (em != null) {
+                em.close();
+            }
+        }
+
+    }
+
+
 }

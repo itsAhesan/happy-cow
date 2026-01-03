@@ -16,30 +16,40 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet"/>
 
-    <style>
-        body { font-family: Arial, sans-serif; }
-        .sidebar {
-            height: 100vh;
-            background-color: #f8f9fa;
-            border-right: 1px solid #ddd;
-            padding-top: 1rem;
-            position: sticky; top: 0;
-        }
-        .sidebar a {
-            display: block; padding: 0.75rem 1rem; margin: 0.2rem 0;
-            color: #333; text-decoration: none; border-radius: 6px; transition: 0.2s;
-        }
-        .sidebar a:hover, .sidebar a.active { background-color: #e9ecef; font-weight: bold; }
-        .main-content { padding: 2rem; }
-        .navbar-custom { background-color: #fff; border-bottom: 1px solid #ddd; }
-        .navbar-custom .navbar-brand { font-weight: bold; color: #2ea44f; }
-        .search-box { max-width: 400px; width: 100%; }
-        .dropdown-menu-notifs { width: 340px; }
-        #notificationScroll { max-height: 320px; overflow-y: auto; }
-        .notif-item { position: relative; }
-        .notif-item small { display: block; }
-        .stretched-link { position: absolute; inset: 0; }
-    </style>
+   <style>
+           body { font-family: Arial, sans-serif; min-height: 100vh; display: flex; flex-direction: column; }
+           .sidebar {
+               height: 100vh;
+               background-color: #f8f9fa;
+               border-right: 1px solid #ddd;
+               padding-top: 1rem;
+               position: sticky; top: 0;
+           }
+           .sidebar a {
+               display: block; padding: 0.75rem 1rem; margin: 0.2rem 0;
+               color: #333; text-decoration: none; border-radius: 6px; transition: 0.2s;
+           }
+           .sidebar a:hover, .sidebar a.active { background-color: #e9ecef; font-weight: bold; }
+           .main-content { padding: 2rem; min-height: calc(100vh - 140px); } /* allow footer space */
+           .navbar-custom { background-color: #fff; border-bottom: 1px solid #ddd; }
+           .navbar-custom .navbar-brand { font-weight: bold; color: #2ea44f; }
+           .search-box { max-width: 400px; width: 100%; }
+           .dropdown-menu-notifs { width: 340px; }
+           #notificationScroll { max-height: 320px; overflow-y: auto; }
+           .notif-item { position: relative; }
+           .notif-item small { display: block; }
+           .stretched-link { position: absolute; inset: 0; }
+           /* Metric cards */
+           .metric-card { border-radius: 0.75rem; box-shadow: 0 6px 18px rgba(20,20,20,0.05); }
+           footer.site-footer {
+               background: #0f1723;
+               color: #cbd5e1;
+               padding: 2rem 1rem;
+               margin-top: auto;
+           }
+           footer.site-footer a { color: #9ae6b4; text-decoration: none; }
+           footer.site-footer .small { color: #94a3b8; }
+       </style>
 </head>
 <body>
 
@@ -156,68 +166,65 @@
         </div>
 
         <!-- Main -->
-        <div class="col-md-10 main-content">
-            <h2 class="fw-bold mb-4">Welcome, <c:out value="${loggedInAdmin.adminName}"/></h2>
-            <p class="text-muted">Here’s an overview of your dairy operations.</p>
+        <!-- Main -->
+               <div class="col-md-10 main-content">
+                   <div class="d-flex justify-content-between align-items-center mb-4">
+                       <div>
+                           <h2 class="fw-bold mb-0">Welcome, <c:out value="${loggedInAdmin.adminName}"/></h2>
+                           <p class="text-muted mb-0">Overview of operations</p>
+                       </div>
+                   </div>
 
-            <div class="row g-4">
-                <div class="col-md-4">
-                    <div class="card shadow-sm rounded-4 border-0">
-                        <div class="card-body">
-                            <h5 class="card-title">Total Products</h5>
-                            <p class="display-6 fw-bold text-success">120</p>
-                            <p class="text-muted small">Dairy products currently listed</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="card shadow-sm rounded-4 border-0">
-                        <div class="card-body">
-                            <h5 class="card-title">Pending Orders</h5>
-                            <p class="display-6 fw-bold text-primary">45</p>
-                            <p class="text-muted small">Orders waiting for processing</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="card shadow-sm rounded-4 border-0">
-                        <div class="card-body">
-                            <h5 class="card-title">Customers</h5>
-                            <p class="display-6 fw-bold text-warning">350</p>
-                            <p class="text-muted small">Registered customers</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
+                   <!-- KPI tiles only (fetch counts from server) -->
+                   <div class="row g-4">
+                       <div class="col-md-4">
+                           <div class="card metric-card p-3 border-0">
+                               <div class="d-flex align-items-center">
+                                   <div class="flex-grow-1">
+                                       <h6 class="mb-1">Total Products</h6>
+                                       <h2 class="mb-0 text-success">${totalProducts}</h2>
+                                       <small class="text-muted">Active dairy products</small>
+                                   </div>
+                                   <div class="ms-3">
+                                       <i class="fa-solid fa-cow fa-2x text-secondary"></i>
+                                   </div>
+                               </div>
+                           </div>
+                       </div>
 
-            <div id="agentsSection" class="mt-5">
-                <h3 class="fw-bold">Agents</h3>
-                <p class="text-muted">List of agents will be displayed here.</p>
-                <table class="table table-bordered table-hover mt-3">
-                    <thead class="table-light">
-                    <tr>
-                        <th>ID</th>
-                        <th>Name</th>
-                        <th>Region</th>
-                        <th>Contact</th>
-                    </tr>
-                    </thead>
-                    <tbody>
-                    <tr>
-                        <td>1</td>
-                        <td>Ravi Kumar</td>
-                        <td>Bangalore</td>
-                        <td>+91 9876543210</td>
-                    </tr>
-                    <tr>
-                        <td>2</td>
-                        <td>Anita Sharma</td>
-                        <td>Mysore</td>
-                        <td>+91 9123456780</td>
-                    </tr>
-                    </tbody>
-                </table>
-            </div>
+                       <div class="col-md-4">
+                           <div class="card metric-card p-3 border-0">
+                               <div class="d-flex align-items-center">
+                                   <div class="flex-grow-1">
+                                       <h6 class="mb-1">Total Agents</h6>
+                                       <h2 class="mb-0 text-primary">${totalAgents}</h2>
+                                       <small class="text-muted">Active agents</small>
+                                   </div>
+                                   <div class="ms-3">
+                                       <i class="fa-solid fa-user-tie fa-2x text-secondary"></i>
+                                   </div>
+                               </div>
+                           </div>
+                       </div>
+
+                       <!-- Optionally keep this for future metrics -->
+                       <div class="col-md-4">
+                           <div class="card metric-card p-3 border-0">
+                               <div class="d-flex align-items-center">
+                                   <div class="flex-grow-1">
+                                       <h6 class="mb-1">Pending Notifications</h6>
+                                       <h2 class="mb-0 text-warning">
+                                           <c:out value="${empty sessionScope.BELL_COUNT ? 0 : sessionScope.BELL_COUNT}"/>
+                                       </h2>
+                                       <small class="text-muted">Preloaded for your session</small>
+                                   </div>
+                                   <div class="ms-3">
+                                       <i class="fa-solid fa-bell fa-2x text-secondary"></i>
+                                   </div>
+                               </div>
+                           </div>
+                       </div>
+                   </div>
 
         </div>
     </div>

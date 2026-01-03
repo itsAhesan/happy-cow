@@ -29,4 +29,6 @@ public interface ProductRepo {
     void saveAll(List<ProductEntity> entitiesToSave);
 
     List<ProductEntity> findAllActiveProducts();
+
+    long countByActiveTrue();
 }
